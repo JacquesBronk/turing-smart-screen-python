@@ -462,8 +462,11 @@ def encrypt_command_packet(data: bytearray) -> bytearray:
 
 
 def find_usb_device():
+    dev = None
     for pid in PRODUCT_ID:
         dev = usb.core.find(idVendor=VENDOR_ID, idProduct=pid)
+        if dev is not None:
+            break
     if dev is None:
         raise ValueError(f'USB device not found')
     
