@@ -62,6 +62,8 @@ def _get_theme_size() -> tuple[int, int]:
         return 480, 480
     elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '3.5"':
         return 320, 480
+    elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '4.6"':
+        return 320, 960
     elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '5"':
         return 480, 800
     elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '8.8"':

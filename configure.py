@@ -64,6 +64,8 @@ WEACT_MODEL = "WeAct Studio Display FS V1"
 SIMULATED_MODEL = "Simulated screen"
 
 SIZE_3_5_INCH = "3.5\""
+SIZE_4_6_INCH = "4.6\""
+SIZE_4_6_INCH_USB = "4.6\""
 SIZE_5_INCH = "5\""
 SIZE_8_8_INCH = "8.8\""
 SIZE_8_8_INCH_USB = "8.8\" (V1.1) or 9.2\""
@@ -71,7 +73,7 @@ SIZE_2_1_INCH = "2.1\""  # Only for retro compatibility
 SIZE_2_x_INCH = "2.1\" / 2.8\""
 SIZE_0_96_INCH = "0.96\""
 
-size_list = (SIZE_0_96_INCH, SIZE_2_x_INCH, SIZE_3_5_INCH, SIZE_5_INCH, SIZE_8_8_INCH, SIZE_8_8_INCH_USB)
+size_list = (SIZE_0_96_INCH, SIZE_2_x_INCH, SIZE_3_5_INCH, SIZE_4_6_INCH_USB,  SIZE_5_INCH, SIZE_8_8_INCH, SIZE_8_8_INCH_USB)
 
 # Maps between config.yaml values and GUI description
 revision_and_size_to_model_map = {
@@ -81,6 +83,7 @@ revision_and_size_to_model_map = {
     ('C', SIZE_2_x_INCH): TURING_MODEL,
     ('C', SIZE_5_INCH): TURING_MODEL,
     ('C', SIZE_8_8_INCH): TURING_MODEL,
+    ('C_USB', SIZE_4_6_INCH_USB): TURING_MODEL,
     ('C_USB', SIZE_8_8_INCH_USB): TURING_MODEL,
     ('D', SIZE_3_5_INCH): KIPYE_MODEL,
     ('WEACT_A', SIZE_3_5_INCH): WEACT_MODEL,
@@ -88,6 +91,7 @@ revision_and_size_to_model_map = {
     ('SIMU', SIZE_0_96_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_2_x_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_3_5_INCH): SIMULATED_MODEL,
+    ('SIMU', SIZE_4_6_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_5_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_8_8_INCH): SIMULATED_MODEL,
 }
@@ -99,6 +103,7 @@ model_and_size_to_revision_map = {
     (TURING_MODEL, SIZE_2_x_INCH): 'C',
     (TURING_MODEL, SIZE_5_INCH): 'C',
     (TURING_MODEL, SIZE_8_8_INCH): 'C',
+    (TURING_MODEL, SIZE_4_6_INCH_USB): 'C_USB',
     (TURING_MODEL, SIZE_8_8_INCH_USB): 'C_USB',
     (KIPYE_MODEL, SIZE_3_5_INCH): 'D',
     (WEACT_MODEL, SIZE_3_5_INCH): 'WEACT_A',
@@ -106,6 +111,7 @@ model_and_size_to_revision_map = {
     (SIMULATED_MODEL, SIZE_0_96_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_2_x_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_3_5_INCH): 'SIMU',
+    (SIMULATED_MODEL, SIZE_4_6_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_5_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_8_8_INCH): 'SIMU',
 }
