@@ -72,8 +72,7 @@ SIZE_5_INCH = "5\""
 SIZE_5_2_INCH = "5.2\""
 SIZE_8_0_INCH = "8.0\""
 SIZE_8_8_INCH = "8.8\""
-SIZE_8_8_INCH_NEWREV = "8.8\" (V1.X new HW rev.)"
-SIZE_9_2_INCH = "9.2\""
+SIZE_8_8_INCH_NEWREV = "8.8\" / 9.2\" (V1.X new HW rev.)"
 
 # List of sizes that can be selected
 size_list = (
@@ -86,7 +85,6 @@ size_list = (
     # SIZE_8_0_INCH, Not implemented yet
     SIZE_8_8_INCH,
     SIZE_8_8_INCH_NEWREV,
-    # SIZE_9_2_INCH, Not implemented yet
 )
 
 # Maps between config.yaml values and GUI description
@@ -104,7 +102,6 @@ revision_and_size_to_model_map = {
     ('TUR_USB', SIZE_8_0_INCH): TURING_MODEL,
     ('TUR_USB', SIZE_8_8_INCH): TURING_MODEL,
     ('TUR_USB', SIZE_8_8_INCH_NEWREV): TURING_MODEL,
-    ('TUR_USB', SIZE_9_2_INCH): TURING_MODEL,
     ('WEACT_A', SIZE_3_5_INCH): WEACT_MODEL,
     ('WEACT_B', SIZE_0_96_INCH): WEACT_MODEL,
 
@@ -116,7 +113,6 @@ revision_and_size_to_model_map = {
     ('SIMU', SIZE_5_2_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_8_0_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_8_8_INCH): SIMULATED_MODEL,
-    ('SIMU', SIZE_9_2_INCH): SIMULATED_MODEL,
 }
 # This map is used to write the correct config.yaml "REVISION" from selected smart screen model and size
 model_and_size_to_revision_map = {
@@ -129,7 +125,6 @@ model_and_size_to_revision_map = {
     (TURING_MODEL, SIZE_8_0_INCH): 'TUR_USB',
     (TURING_MODEL, SIZE_8_8_INCH): 'C',
     (TURING_MODEL, SIZE_8_8_INCH_NEWREV): 'TUR_USB',
-    (TURING_MODEL, SIZE_9_2_INCH): 'TUR_USB',
     (USBPCMONITOR_MODEL, SIZE_3_5_INCH): 'A',
     (USBPCMONITOR_MODEL, SIZE_5_INCH): 'A',
     (WEACT_MODEL, SIZE_0_96_INCH): 'WEACT_B',
@@ -144,7 +139,6 @@ model_and_size_to_revision_map = {
     (SIMULATED_MODEL, SIZE_5_2_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_8_0_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_8_8_INCH): 'SIMU',
-    (SIMULATED_MODEL, SIZE_9_2_INCH): 'SIMU',
 }
 hw_lib_map = {"AUTO": "Automatic", "LHM": "LibreHardwareMonitor (admin.)", "PYTHON": "Python libraries",
               "STUB": "Fake random data", "STATIC": "Fake static data"}

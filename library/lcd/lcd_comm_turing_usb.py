@@ -18,12 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import math
 import os
 import platform
 import queue
-import struct
 import shutil
+import struct
 import subprocess
 import time
 from io import BytesIO
@@ -35,20 +34,20 @@ import usb.util
 from Crypto.Cipher import DES
 from PIL import Image
 
-from library.log import logger
 from library.lcd.lcd_comm import Orientation, LcdComm
+from library.log import logger
 
 VENDOR_ID = 0x1cbe
-PRODUCT_ID = [
-    0x0046, # Turing 4.6", 960x320
-    0x0052, # Turing 5.2", 1280x720
-    0x0080, # Turing 8.0", 1280x800
-    0x0088, # Turing 8.8", 1920x480
-    0x0092, # Turing 9.2", 1920x462
-]
 
+# Map of display supported product IDs and their respective resolution in portrait mode
+PRODUCT_ID = {0x0046: (320, 960),  # Turing 4.6"
+    0x0052: (720, 1280),  # Turing 5.2"
+    0x0080: (800, 1280),  # Turing 8.0"
+    0x0088: (480, 1920),  # Turing 8.8"
+    0x0092: (462, 1920),  # Turing 9.2"
+}
 
-MAX_CHUNK_BYTES = 1024*1024  # Data sent to screen cannot exceed 1024MB or there will be a timeout
+MAX_CHUNK_BYTES = 1024 * 1024  # Data sent to screen cannot exceed 1024MB or there will be a timeout
 
 # Command IDs used by the vendor protocol (subset)
 CMD_UPLOAD_JPEG = 101
@@ -61,12 +60,14 @@ CMD_STOP_STREAM = 123
 # Default max payload for frame uploads (device/transport limit)
 MAX_IMAGE_PAYLOAD_DEFAULT = MAX_CHUNK_BYTES
 
+
 def _resp_ok(resp: Optional[bytes]) -> bool:
     if not resp:
         return False
     b1 = resp[1] if len(resp) > 1 else None
     b8 = resp[8] if len(resp) > 8 else None
     return (b1 == 0xC8) or (b8 == 0xC8)
+
 
 def send_jpeg(dev, jpeg_data: bytes):
     img_size = len(jpeg_data)
@@ -78,13 +79,9 @@ def send_jpeg(dev, jpeg_data: bytes):
     full_payload = encrypt_command_packet(cmd_packet) + jpeg_data
     return write_to_device(dev, full_payload)
 
-def _encode_jpeg_under_limit(
-    image: Image.Image,
-    *,
-    max_bytes: int,
-    quality: int = 95,
-    subsampling: int = -1,
-) -> bytes:
+
+def _encode_jpeg_under_limit(image: Image.Image, *, max_bytes: int, quality: int = 95,
+        subsampling: int = -1, ) -> bytes:
     if subsampling not in (-1, 0, 1, 2):
         raise ValueError("subsampling must be one of: -1, 0, 1, 2")
     img = image
@@ -100,14 +97,7 @@ def _encode_jpeg_under_limit(
         while q >= 1:
             buf = BytesIO()
             try:
-                img.save(
-                    buf,
-                    format="JPEG",
-                    quality=q,
-                    optimize=False,
-                    progressive=False,
-                    subsampling=sub,
-                )
+                img.save(buf, format="JPEG", quality=q, optimize=False, progressive=False, subsampling=sub, )
             except TypeError:
                 img.save(buf, format="JPEG", quality=q, optimize=False, progressive=False)
             data = buf.getvalue()
@@ -119,12 +109,8 @@ def _encode_jpeg_under_limit(
 
     raise RuntimeError(f"Could not transcode JPEG under max_bytes: {len(best)} > {max_bytes}")
 
-def send_pil_image_auto(
-    dev,
-    image: Image.Image,
-    *,
-    max_bytes: int = MAX_IMAGE_PAYLOAD_DEFAULT,
-) -> None:
+
+def send_pil_image_auto(dev, image: Image.Image, *, max_bytes: int = MAX_IMAGE_PAYLOAD_DEFAULT, ) -> None:
     # First try PNG (preferred)
     png = _encode_png(image)
     if len(png) <= max_bytes:
@@ -134,26 +120,30 @@ def send_pil_image_auto(
     jpg = _encode_jpeg_under_limit(image, max_bytes=max_bytes, quality=90, subsampling=-1)
     send_jpeg(dev, jpg)
 
+
 # ---- MP4 parsing + Annex-B extraction (pure Python fallback) ----
 from dataclasses import dataclass
-from typing import Iterable, Tuple, Set
+from typing import Iterable, Set
+
 
 def _u32be(b: bytes, off: int = 0) -> int:
-    return int.from_bytes(b[off:off+4], "big", signed=False)
+    return int.from_bytes(b[off:off + 4], "big", signed=False)
+
 
 def _u64be(b: bytes, off: int = 0) -> int:
-    return int.from_bytes(b[off:off+8], "big", signed=False)
+    return int.from_bytes(b[off:off + 8], "big", signed=False)
+
 
 def _iter_mp4_boxes(data: bytes, start: int, end: int) -> Iterable[tuple[bytes, int, int]]:
     i = start
     while i + 8 <= end:
         size = _u32be(data, i)
-        typ = data[i+4:i+8]
+        typ = data[i + 4:i + 8]
         hdr = 8
         if size == 1:
             if i + 16 > end:
                 break
-            size = _u64be(data, i+8)
+            size = _u64be(data, i + 8)
             hdr = 16
         elif size == 0:
             size = end - i
@@ -165,11 +155,13 @@ def _iter_mp4_boxes(data: bytes, start: int, end: int) -> Iterable[tuple[bytes, 
         yield typ, i + hdr, j
         i = j
 
+
 def _mp4_find_box(data: bytes, start: int, end: int, typ: bytes) -> Optional[tuple[int, int]]:
     for t, ps, pe in _iter_mp4_boxes(data, start, end):
         if t == typ:
             return ps, pe
     return None
+
 
 @dataclass
 class _Mp4H264Track:
@@ -181,6 +173,7 @@ class _Mp4H264Track:
     stsc: list[tuple[int, int, int]]  # (first_chunk, samples_per_chunk, sample_desc_idx)
     sync_samples: Optional[Set[int]]
 
+
 def _mp4_parse_avcc(avcc: bytes) -> tuple[int, list[bytes], list[bytes]]:
     if len(avcc) < 7:
         raise ValueError("avcC too small")
@@ -191,11 +184,11 @@ def _mp4_parse_avcc(avcc: bytes) -> tuple[int, list[bytes], list[bytes]]:
     for _ in range(num_sps):
         if off + 2 > len(avcc):
             raise ValueError("avcC truncated (SPS length)")
-        n = int.from_bytes(avcc[off:off+2], "big")
+        n = int.from_bytes(avcc[off:off + 2], "big")
         off += 2
         if off + n > len(avcc):
             raise ValueError("avcC truncated (SPS data)")
-        sps_list.append(avcc[off:off+n])
+        sps_list.append(avcc[off:off + n])
         off += n
     if off + 1 > len(avcc):
         raise ValueError("avcC truncated (PPS count)")
@@ -205,13 +198,14 @@ def _mp4_parse_avcc(avcc: bytes) -> tuple[int, list[bytes], list[bytes]]:
     for _ in range(num_pps):
         if off + 2 > len(avcc):
             raise ValueError("avcC truncated (PPS length)")
-        n = int.from_bytes(avcc[off:off+2], "big")
+        n = int.from_bytes(avcc[off:off + 2], "big")
         off += 2
         if off + n > len(avcc):
             raise ValueError("avcC truncated (PPS data)")
-        pps_list.append(avcc[off:off+n])
+        pps_list.append(avcc[off:off + n])
         off += n
     return nal_len_size, sps_list, pps_list
+
 
 def _mp4_load_moov(path: str) -> bytes:
     with open(path, "rb") as f:
@@ -241,6 +235,7 @@ def _mp4_load_moov(path: str) -> bytes:
                 return f.read(payload_size)
             f.seek(payload_size, os.SEEK_CUR)
     raise ValueError("MP4: moov box not found")
+
 
 def _mp4_pick_h264_video_track(moov: bytes) -> _Mp4H264Track:
     moov_start = 0
@@ -290,7 +285,7 @@ def _mp4_pick_h264_video_track(moov: bytes) -> _Mp4H264Track:
             if off + 8 > len(stsd_payload):
                 break
             ent_size = _u32be(stsd_payload, off)
-            fmt = stsd_payload[off+4:off+8]
+            fmt = stsd_payload[off + 4:off + 8]
             ent_end = off + int(ent_size)
             if ent_size < 8 or ent_end > len(stsd_payload):
                 break
@@ -335,7 +330,7 @@ def _mp4_pick_h264_video_track(moov: bytes) -> _Mp4H264Track:
             need = 8 + int(n) * 4
             if len(stco_payload) < need:
                 continue
-            chunk_offsets = [int(_u32be(stco_payload, 8 + 4*i)) for i in range(int(n))]
+            chunk_offsets = [int(_u32be(stco_payload, 8 + 4 * i)) for i in range(int(n))]
         else:
             co64_payload = moov[co64[0]:co64[1]]  # type: ignore[index]
             if len(co64_payload) < 8:
@@ -344,7 +339,7 @@ def _mp4_pick_h264_video_track(moov: bytes) -> _Mp4H264Track:
             need = 8 + int(n) * 8
             if len(co64_payload) < need:
                 continue
-            chunk_offsets = [int(_u64be(co64_payload, 8 + 8*i)) for i in range(int(n))]
+            chunk_offsets = [int(_u64be(co64_payload, 8 + 8 * i)) for i in range(int(n))]
 
         stsc_payload = moov[stsc[0]:stsc[1]]
         if len(stsc_payload) < 8:
@@ -357,8 +352,8 @@ def _mp4_pick_h264_video_track(moov: bytes) -> _Mp4H264Track:
         off3 = 8
         for _ in range(int(n)):
             first_chunk = int(_u32be(stsc_payload, off3))
-            samples_per_chunk = int(_u32be(stsc_payload, off3+4))
-            desc_idx = int(_u32be(stsc_payload, off3+8))
+            samples_per_chunk = int(_u32be(stsc_payload, off3 + 4))
+            desc_idx = int(_u32be(stsc_payload, off3 + 8))
             stsc_entries.append((first_chunk, samples_per_chunk, desc_idx))
             off3 += 12
         stsc_entries.sort(key=lambda x: x[0])
@@ -370,19 +365,13 @@ def _mp4_pick_h264_video_track(moov: bytes) -> _Mp4H264Track:
                 n2 = _u32be(stss_payload, 4)
                 need = 8 + int(n2) * 4
                 if len(stss_payload) >= need:
-                    sync_samples = set(int(_u32be(stss_payload, 8 + 4*i)) for i in range(int(n2)))
+                    sync_samples = set(int(_u32be(stss_payload, 8 + 4 * i)) for i in range(int(n2)))
 
-        return _Mp4H264Track(
-            nal_len_size=int(nal_len_size),
-            sps_list=sps_list,
-            pps_list=pps_list,
-            sample_sizes=sample_sizes,
-            chunk_offsets=chunk_offsets,
-            stsc=stsc_entries,
-            sync_samples=sync_samples,
-        )
+        return _Mp4H264Track(nal_len_size=int(nal_len_size), sps_list=sps_list, pps_list=pps_list,
+            sample_sizes=sample_sizes, chunk_offsets=chunk_offsets, stsc=stsc_entries, sync_samples=sync_samples, )
 
     raise ValueError("MP4: no H.264 video track found")
+
 
 def _mp4_iter_sample_locations(track: _Mp4H264Track) -> Iterable[tuple[int, int, int]]:
     sizes = track.sample_sizes
@@ -404,6 +393,7 @@ def _mp4_iter_sample_locations(track: _Mp4H264Track) -> Iterable[tuple[int, int,
             off += sz
             sample_idx0 += 1
 
+
 def _mp4_extract_h264_annexb(in_path: str, out_path: str, *, repeat_headers: bool = True) -> None:
     moov = _mp4_load_moov(in_path)
     track = _mp4_pick_h264_video_track(moov)
@@ -415,7 +405,7 @@ def _mp4_extract_h264_annexb(in_path: str, out_path: str, *, repeat_headers: boo
     with open(in_path, "rb") as fin, open(out_path, "wb") as fout:
         fout.write(spspps)
         nls = int(track.nal_len_size)
-        if nls not in (1,2,3,4):
+        if nls not in (1, 2, 3, 4):
             raise ValueError(f"MP4: unsupported NAL length size: {nls}")
         sync = track.sync_samples
         for sample_no, off, sz in _mp4_iter_sample_locations(track):
@@ -428,16 +418,15 @@ def _mp4_extract_h264_annexb(in_path: str, out_path: str, *, repeat_headers: boo
             pos = 0
             end = len(data)
             while pos + nls <= end:
-                nal_len = int.from_bytes(data[pos:pos+nls], "big")
+                nal_len = int.from_bytes(data[pos:pos + nls], "big")
                 pos += nls
                 if nal_len <= 0:
                     continue
                 if pos + nal_len > end:
                     raise ValueError("MP4: invalid NAL length in sample")
                 fout.write(start_code)
-                fout.write(data[pos:pos+nal_len])
+                fout.write(data[pos:pos + nal_len])
                 pos += nal_len
-
 
 
 def build_command_packet_header(a0: int) -> bytearray:
@@ -469,13 +458,14 @@ def encrypt_command_packet(data: bytearray) -> bytearray:
 
 def find_usb_device():
     dev = None
-    for pid in PRODUCT_ID:
+    dev_pid = None
+    for pid in PRODUCT_ID.keys():
         dev = usb.core.find(idVendor=VENDOR_ID, idProduct=pid)
+        dev_pid = pid
         if dev is not None:
             break
     if dev is None:
         raise ValueError(f'USB device not found')
-    
 
     try:
         dev.set_configuration()
@@ -489,7 +479,7 @@ def find_usb_device():
         except usb.core.USBError as e:
             print("Warning: detach_kernel_driver failed:", e)
 
-    return dev
+    return dev, dev_pid
 
 
 def read_flush(ep_in, max_attempts=5):
@@ -606,7 +596,7 @@ def send_save_settings_command(dev, brightness=0, startup=0, reserved=0, rotatio
 def send_image(dev, png_data: bytes):
     img_size = len(png_data)
 
-    cmd_packet = build_command_packet_header(102)
+    cmd_packet = build_command_packet_header(CMD_UPLOAD_PNG)
     cmd_packet[8] = (img_size >> 24) & 0xFF
     cmd_packet[9] = (img_size >> 16) & 0xFF
     cmd_packet[10] = (img_size >> 8) & 0xFF
@@ -619,13 +609,14 @@ def send_image(dev, png_data: bytes):
 def clear_image(dev):
     img_data = bytearray(
         [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00,
-            0x01, 0xe0, 0x00, 0x00, 0x07, 0x80, 0x08, 0x06, 0x00, 0x00, 0x00, 0x16, 0xf0, 0x84, 0xf5, 0x00, 0x00, 0x00,
-            0x01, 0x73, 0x52, 0x47, 0x42, 0x00, 0xae, 0xce, 0x1c, 0xe9, 0x00, 0x00, 0x00, 0x04, 0x67, 0x41, 0x4d, 0x41,
-            0x00, 0x00, 0xb1, 0x8f, 0x0b, 0xfc, 0x61, 0x05, 0x00, 0x00, 0x00, 0x09, 0x70, 0x48, 0x59, 0x73, 0x00, 0x00,
-            0x0e, 0xc3, 0x00, 0x00, 0x0e, 0xc3, 0x01, 0xc7, 0x6f, 0xa8, 0x64, 0x00, 0x00, 0x0e, 0x0c, 0x49, 0x44, 0x41,
-            0x54, 0x78, 0x5e, 0xed, 0xc1, 0x01, 0x0d, 0x00, 0x00, 0x00, 0xc2, 0xa0, 0xf7, 0x4f, 0x6d, 0x0f, 0x07, 0x14,
-            0x00, 0x00, 0x00, 0x00, ] + [0x00] * 3568 + [0x00, 0xf0, 0x66, 0x4a, 0xc8, 0x00, 0x01, 0x11, 0x9d, 0x82,
-            0x0a, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82])
+         0x01, 0xe0, 0x00, 0x00, 0x07, 0x80, 0x08, 0x06, 0x00, 0x00, 0x00, 0x16, 0xf0, 0x84, 0xf5, 0x00, 0x00, 0x00,
+         0x01, 0x73, 0x52, 0x47, 0x42, 0x00, 0xae, 0xce, 0x1c, 0xe9, 0x00, 0x00, 0x00, 0x04, 0x67, 0x41, 0x4d, 0x41,
+         0x00, 0x00, 0xb1, 0x8f, 0x0b, 0xfc, 0x61, 0x05, 0x00, 0x00, 0x00, 0x09, 0x70, 0x48, 0x59, 0x73, 0x00, 0x00,
+         0x0e, 0xc3, 0x00, 0x00, 0x0e, 0xc3, 0x01, 0xc7, 0x6f, 0xa8, 0x64, 0x00, 0x00, 0x0e, 0x0c, 0x49, 0x44, 0x41,
+         0x54, 0x78, 0x5e, 0xed, 0xc1, 0x01, 0x0d, 0x00, 0x00, 0x00, 0xc2, 0xa0, 0xf7, 0x4f, 0x6d, 0x0f, 0x07, 0x14,
+         0x00, 0x00, 0x00, 0x00, ] + [0x00] * 3568 + [0x00, 0xf0, 0x66, 0x4a, 0xc8, 0x00, 0x01, 0x11, 0x9d, 0x82, 0x0a,
+                                                      0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60,
+                                                      0x82])
     img_size = len(img_data)
     print(f"  Chunk Size: {img_size} bytes")
 
@@ -661,20 +652,8 @@ def extract_h264_from_mp4(mp4_path: str):
     # Prefer ffmpeg when available (fast + robust). Fall back to pure-Python MP4->Annex-B extraction.
     ffmpeg = shutil.which("ffmpeg")
     if ffmpeg:
-        cmd = [
-            ffmpeg,
-            "-y",
-            "-i",
-            str(input_path),
-            "-c:v",
-            "copy",
-            "-bsf:v",
-            "h264_mp4toannexb",
-            "-an",
-            "-f",
-            "h264",
-            str(output_path),
-        ]
+        cmd = [ffmpeg, "-y", "-i", str(input_path), "-c:v", "copy", "-bsf:v", "h264_mp4toannexb", "-an", "-f", "h264",
+            str(output_path), ]
         print(f"Extracting H.264 from {input_path.name} with ffmpeg...")
         subprocess.run(cmd, check=True)
         print(f"Done. Saved as {output_path.name}")
@@ -684,7 +663,6 @@ def extract_h264_from_mp4(mp4_path: str):
     _mp4_extract_h264_annexb(str(input_path), str(output_path), repeat_headers=True)
     print(f"Done. Saved as {output_path.name}")
     return output_path
-
 
 
 def send_video(dev, video_path, loop=False):
@@ -737,7 +715,8 @@ def send_video(dev, video_path, loop=False):
                         delay(dev, 2)
                     else:
                         # Poll stream status when queue is high
-                        st = write_to_device(dev, encrypt_command_packet(build_command_packet_header(CMD_GET_STREAM_STATUS)))
+                        st = write_to_device(dev,
+                                             encrypt_command_packet(build_command_packet_header(CMD_GET_STREAM_STATUS)))
                         if st and len(st) > 8 and st[8] > 3:
                             delay(dev, 2)
 
@@ -754,15 +733,6 @@ def _encode_png(image: Image.Image) -> bytes:
     buffer = BytesIO()
     image.save(buffer, format="PNG", compress_level=9)
     return buffer.getvalue()
-
-
-def compress_image(image: Image.Image, ratio: float) -> Image.Image:
-    width, height = image.size
-    image = image.resize((int(width * ratio*0.5), int(height * ratio*0.5)),
-                                   resample=Image.Resampling.LANCZOS)
-    image = image.resize((width, height))
-    return image
-
 
 
 def upload_file(dev, file_path: str) -> bool:
@@ -809,7 +779,7 @@ def _open_file_command(dev, path: str):
     packet[10] = (length >> 8) & 0xFF
     packet[11] = length & 0xFF
     packet[12:16] = b"\x00\x00\x00\x00"
-    packet[16 : 16 + length] = path_bytes
+    packet[16: 16 + length] = path_bytes
 
     return write_to_device(dev, encrypt_command_packet(packet))
 
@@ -826,7 +796,7 @@ def _delete_command(dev, file_path: str):
     packet[10] = (length >> 8) & 0xFF
     packet[11] = length & 0xFF
     packet[12:16] = b"\x00\x00\x00\x00"
-    packet[16 : 16 + length] = path_bytes
+    packet[16: 16 + length] = path_bytes
 
     return write_to_device(dev, encrypt_command_packet(packet))
 
@@ -844,7 +814,7 @@ def _play_command(dev, file_path: str):
     packet[10] = (length >> 8) & 0xFF
     packet[11] = length & 0xFF
     packet[12:16] = b"\x00\x00\x00\x00"
-    packet[16 : 16 + length] = path_bytes
+    packet[16: 16 + length] = path_bytes
 
     return write_to_device(dev, encrypt_command_packet(packet))
 
@@ -862,7 +832,7 @@ def _play2_command(dev, file_path: str):
     packet[10] = (length >> 8) & 0xFF
     packet[11] = length & 0xFF
     packet[12:16] = b"\x00\x00\x00\x00"
-    packet[16 : 16 + length] = path_bytes
+    packet[16: 16 + length] = path_bytes
 
     return write_to_device(dev, encrypt_command_packet(packet))
 
@@ -880,7 +850,7 @@ def _play3_command(dev, file_path: str):
     packet[10] = (length >> 8) & 0xFF
     packet[11] = length & 0xFF
     packet[12:16] = b"\x00\x00\x00\x00"
-    packet[16 : 16 + length] = path_bytes
+    packet[16: 16 + length] = path_bytes
 
     return write_to_device(dev, encrypt_command_packet(packet))
 
@@ -951,7 +921,8 @@ class LcdCommTuringUSB(LcdComm):
     def __init__(self, com_port: str = "AUTO", display_width: int = 480, display_height: int = 1920,
                  update_queue: Optional[queue.Queue] = None):
         super().__init__(com_port, display_width, display_height, update_queue)
-        self.dev = find_usb_device()
+        self.dev, self.dev_pid = find_usb_device()
+        self.display_width, self.display_height = PRODUCT_ID[self.dev_pid]
         # Store the current screen state as an image that will be continuously updated and sent
         self.current_state = Image.new("RGBA", (self.get_width(), self.get_height()), (0, 0, 0, 0))
 
@@ -986,6 +957,7 @@ class LcdCommTuringUSB(LcdComm):
         self.current_state = Image.new("RGBA", (self.get_width(), self.get_height()), (0, 0, 0, 0))
 
     def DisplayPILImage(self, image: Image.Image, x: int = 0, y: int = 0, image_width: int = 0, image_height: int = 0):
+        # If the image height/width isn't provided, use the native image size
         if not image_height:
             image_height = image.size[1]
         if not image_width:
@@ -1011,22 +983,6 @@ class LcdCommTuringUSB(LcdComm):
             base_image = self.current_state.transpose(Image.Transpose.ROTATE_180)
         else:  # Orientation.REVERSE_PORTRAIT is initial screen orientation
             base_image = self.current_state
-
-        # total_size = len(_encode_png(base_image))
-        # print("total size =", total_size/1024)
-        #
-        # if total_size > 1024*1024:
-        #
-        #     # If bitmap is > 1024MB operation will timeout: compress it
-        #     size_overflow = total_size - 1024*1024
-        #     ratio = 1- (size_overflow / total_size)
-        #     print("ratio = ", ratio)
-        #
-        #     base_image = compress_image(base_image, ratio)
-        #
-        #     new_size = len(_encode_png(base_image))
-        #     print("new_size =", new_size/1024)
-
 
         # Send image data (auto JPEG fallback when payload exceeds device limit)
         send_pil_image_auto(self.dev, base_image, max_bytes=MAX_IMAGE_PAYLOAD_DEFAULT)
