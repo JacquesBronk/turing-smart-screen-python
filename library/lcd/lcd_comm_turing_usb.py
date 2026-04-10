@@ -39,7 +39,7 @@ from library.log import logger
 from library.lcd.lcd_comm import Orientation, LcdComm
 
 VENDOR_ID = 0x1cbe
-PRODUCT_ID = [0x0088, 0x0092]   # 8.8", 9.2"
+PRODUCT_ID = [0x0046, 0x0088, 0x0092]   # 4.6", 8.8", 9.2"
 
 
 MAX_CHUNK_BYTES = 1024*1024  # Data sent to screen cannot exceed 1024MB or there will be a timeout
@@ -462,8 +462,11 @@ def encrypt_command_packet(data: bytearray) -> bytearray:
 
 
 def find_usb_device():
+    dev = None
     for pid in PRODUCT_ID:
         dev = usb.core.find(idVendor=VENDOR_ID, idProduct=pid)
+        if dev is not None:
+            break
     if dev is None:
         raise ValueError(f'USB device not found')
     
@@ -936,7 +939,7 @@ def _write_file_command(dev, file_path: str) -> bool:
         return False
 
 
-# This class is for Turing Smart Screen newer models (5.2" / 8" / 8.8" HW rev 1.x / 9.2")
+# This class is for Turing Smart Screen newer models (4.6" / 5.2" / 8" / 8.8" HW rev 1.x / 9.2")
 # These models are not detected as serial ports but as (Win)USB devices
 class LcdCommTuringUSB(LcdComm):
     def __init__(self, com_port: str = "AUTO", display_width: int = 480, display_height: int = 1920,
