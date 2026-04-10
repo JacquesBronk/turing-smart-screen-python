@@ -75,6 +75,7 @@ SIZE_5_2_INCH = "5.2\""
 SIZE_8_0_INCH = "8.0\""
 SIZE_8_8_INCH = "8.8\""
 SIZE_8_8_INCH_NEWREV = "8.8\" / 9.2\" (V1.X new HW rev.)"
+SIZE_12_3_INCH = "12.3\""
 
 # List of sizes that can be selected
 size_list = (
@@ -87,6 +88,7 @@ size_list = (
     # SIZE_8_0_INCH, Not implemented yet
     SIZE_8_8_INCH,
     SIZE_8_8_INCH_NEWREV,
+    # SIZE_12_3_INCH, Not implemented yet
 )
 
 # Maps between config.yaml values and GUI description
@@ -104,6 +106,7 @@ revision_and_size_to_model_map = {
     ('TUR_USB', SIZE_8_0_INCH): TURING_MODEL,
     ('TUR_USB', SIZE_8_8_INCH): TURING_MODEL,
     ('TUR_USB', SIZE_8_8_INCH_NEWREV): TURING_MODEL,
+    ('TUR_USB', SIZE_12_3_INCH): TURING_MODEL,
     ('WEACT_A', SIZE_3_5_INCH): WEACT_MODEL,
     ('WEACT_B', SIZE_0_96_INCH): WEACT_MODEL,
 
@@ -127,6 +130,7 @@ model_and_size_to_revision_map = {
     (TURING_MODEL, SIZE_8_0_INCH): 'TUR_USB',
     (TURING_MODEL, SIZE_8_8_INCH): 'C',
     (TURING_MODEL, SIZE_8_8_INCH_NEWREV): 'TUR_USB',
+    (TURING_MODEL, SIZE_12_3_INCH): 'TUR_USB',
     (USBPCMONITOR_MODEL, SIZE_3_5_INCH): 'A',
     (USBPCMONITOR_MODEL, SIZE_5_INCH): 'A',
     (WEACT_MODEL, SIZE_0_96_INCH): 'WEACT_B',

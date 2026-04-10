@@ -45,6 +45,7 @@ PRODUCT_ID = {0x0046: (320, 960),  # Turing 4.6"
     0x0080: (800, 1280),  # Turing 8.0"
     0x0088: (480, 1920),  # Turing 8.8"
     0x0092: (462, 1920),  # Turing 9.2"
+    0x0123: (720, 1920),  # Turing 12.3"
 }
 
 MAX_CHUNK_BYTES = 1024 * 1024  # Data sent to screen cannot exceed 1024MB or there will be a timeout
@@ -915,7 +916,7 @@ def _write_file_command(dev, file_path: str) -> bool:
         return False
 
 
-# This class is for Turing Smart Screen newer models (4.6" / 5.2" / 8" / 8.8" HW rev 1.x / 9.2")
+# This class is for Turing Smart Screen newer models (4.6" / 5.2" / 8" / 8.8" HW rev 1.x / 9.2" / 12.3")
 # These models are not detected as serial ports but as (Win)USB devices
 class LcdCommTuringUSB(LcdComm):
     def __init__(self, com_port: str = "AUTO", display_width: int = 480, display_height: int = 1920,
