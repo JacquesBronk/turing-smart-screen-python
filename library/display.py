@@ -88,12 +88,12 @@ class Display:
             # Because of issue with Turing rev. C size auto-detection, manually configure screen width/height from theme
             self.lcd = LcdCommRevC(com_port=config.CONFIG_DATA['config']['COM_PORT'],
                                    update_queue=config.update_queue, display_width=width, display_height=height)
-        elif config.CONFIG_DATA["display"]["REVISION"] == "C_USB":
-            # On all USB models, manually configure screen width/height from theme
-            self.lcd = LcdCommTuringUSB(display_width=width, display_height=height)
         elif config.CONFIG_DATA["display"]["REVISION"] == "D":
             self.lcd = LcdCommRevD(com_port=config.CONFIG_DATA['config']['COM_PORT'],
                                    update_queue=config.update_queue)
+        elif config.CONFIG_DATA["display"]["REVISION"] == "TUR_USB":
+            # On all USB models, manually configure screen width/height from theme
+            self.lcd = LcdCommTuringUSB(display_width=width, display_height=height)
         elif config.CONFIG_DATA["display"]["REVISION"] == "WEACT_A":
             self.lcd = LcdCommWeActA(com_port=config.CONFIG_DATA['config']['COM_PORT'],
                                    update_queue=config.update_queue)

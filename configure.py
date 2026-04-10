@@ -63,19 +63,34 @@ KIPYE_MODEL = "Kipye Qiye Smart Display"
 WEACT_MODEL = "WeAct Studio Display FS V1"
 SIMULATED_MODEL = "Simulated screen"
 
-SIZE_3_5_INCH = "3.5\""
-SIZE_4_6_INCH = "4.6\""
-SIZE_4_6_INCH_USB = "4.6\""
-SIZE_5_INCH = "5\""
-SIZE_8_8_INCH = "8.8\""
-SIZE_8_8_INCH_USB = "8.8\" (V1.1) or 9.2\""
+SIZE_0_96_INCH = "0.96\""
 SIZE_2_1_INCH = "2.1\""  # Only for retro compatibility
 SIZE_2_x_INCH = "2.1\" / 2.8\""
-SIZE_0_96_INCH = "0.96\""
+SIZE_3_5_INCH = "3.5\""
+SIZE_4_6_INCH = "4.6\""
+SIZE_5_INCH = "5\""
+SIZE_5_2_INCH = "5.2\""
+SIZE_8_0_INCH = "8.0\""
+SIZE_8_8_INCH = "8.8\""
+SIZE_8_8_INCH_NEWREV = "8.8\" (V1.X new HW rev.)"
+SIZE_9_2_INCH = "9.2\""
 
-size_list = (SIZE_0_96_INCH, SIZE_2_x_INCH, SIZE_3_5_INCH, SIZE_4_6_INCH_USB,  SIZE_5_INCH, SIZE_8_8_INCH, SIZE_8_8_INCH_USB)
+# List of sizes that can be selected
+size_list = (
+    SIZE_0_96_INCH,
+    SIZE_2_x_INCH,
+    SIZE_3_5_INCH,
+    SIZE_4_6_INCH,
+    SIZE_5_INCH,
+    # SIZE_5_2_INCH, Not implemented yet
+    # SIZE_8_0_INCH, Not implemented yet
+    SIZE_8_8_INCH,
+    SIZE_8_8_INCH_NEWREV,
+    # SIZE_9_2_INCH, Not implemented yet
+)
 
 # Maps between config.yaml values and GUI description
+# This map is used to select the correct smart screen model based on config.yaml "REVISION" and selected "THEME" size
 revision_and_size_to_model_map = {
     ('A', SIZE_3_5_INCH): TURING_MODEL,  # Can also be UsbPCMonitor 3.5, does not matter since protocol is the same
     ('A', SIZE_5_INCH): USBPCMONITOR_MODEL,
@@ -83,37 +98,53 @@ revision_and_size_to_model_map = {
     ('C', SIZE_2_x_INCH): TURING_MODEL,
     ('C', SIZE_5_INCH): TURING_MODEL,
     ('C', SIZE_8_8_INCH): TURING_MODEL,
-    ('C_USB', SIZE_4_6_INCH_USB): TURING_MODEL,
-    ('C_USB', SIZE_8_8_INCH_USB): TURING_MODEL,
     ('D', SIZE_3_5_INCH): KIPYE_MODEL,
+    ('TUR_USB', SIZE_4_6_INCH): TURING_MODEL,
+    ('TUR_USB', SIZE_5_2_INCH): TURING_MODEL,
+    ('TUR_USB', SIZE_8_0_INCH): TURING_MODEL,
+    ('TUR_USB', SIZE_8_8_INCH): TURING_MODEL,
+    ('TUR_USB', SIZE_8_8_INCH_NEWREV): TURING_MODEL,
+    ('TUR_USB', SIZE_9_2_INCH): TURING_MODEL,
     ('WEACT_A', SIZE_3_5_INCH): WEACT_MODEL,
     ('WEACT_B', SIZE_0_96_INCH): WEACT_MODEL,
+
     ('SIMU', SIZE_0_96_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_2_x_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_3_5_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_4_6_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_5_INCH): SIMULATED_MODEL,
+    ('SIMU', SIZE_5_2_INCH): SIMULATED_MODEL,
+    ('SIMU', SIZE_8_0_INCH): SIMULATED_MODEL,
     ('SIMU', SIZE_8_8_INCH): SIMULATED_MODEL,
+    ('SIMU', SIZE_9_2_INCH): SIMULATED_MODEL,
 }
+# This map is used to write the correct config.yaml "REVISION" from selected smart screen model and size
 model_and_size_to_revision_map = {
+    (KIPYE_MODEL, SIZE_3_5_INCH): 'D',
+    (TURING_MODEL, SIZE_2_x_INCH): 'C',
     (TURING_MODEL, SIZE_3_5_INCH): 'A',
+    (TURING_MODEL, SIZE_4_6_INCH): 'TUR_USB',
+    (TURING_MODEL, SIZE_5_2_INCH): 'TUR_USB',
+    (TURING_MODEL, SIZE_5_INCH): 'C',
+    (TURING_MODEL, SIZE_8_0_INCH): 'TUR_USB',
+    (TURING_MODEL, SIZE_8_8_INCH): 'C',
+    (TURING_MODEL, SIZE_8_8_INCH_NEWREV): 'TUR_USB',
+    (TURING_MODEL, SIZE_9_2_INCH): 'TUR_USB',
     (USBPCMONITOR_MODEL, SIZE_3_5_INCH): 'A',
     (USBPCMONITOR_MODEL, SIZE_5_INCH): 'A',
-    (XUANFANG_MODEL, SIZE_3_5_INCH): 'B',
-    (TURING_MODEL, SIZE_2_x_INCH): 'C',
-    (TURING_MODEL, SIZE_5_INCH): 'C',
-    (TURING_MODEL, SIZE_8_8_INCH): 'C',
-    (TURING_MODEL, SIZE_4_6_INCH_USB): 'C_USB',
-    (TURING_MODEL, SIZE_8_8_INCH_USB): 'C_USB',
-    (KIPYE_MODEL, SIZE_3_5_INCH): 'D',
-    (WEACT_MODEL, SIZE_3_5_INCH): 'WEACT_A',
     (WEACT_MODEL, SIZE_0_96_INCH): 'WEACT_B',
+    (WEACT_MODEL, SIZE_3_5_INCH): 'WEACT_A',
+    (XUANFANG_MODEL, SIZE_3_5_INCH): 'B',
+
     (SIMULATED_MODEL, SIZE_0_96_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_2_x_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_3_5_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_4_6_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_5_INCH): 'SIMU',
+    (SIMULATED_MODEL, SIZE_5_2_INCH): 'SIMU',
+    (SIMULATED_MODEL, SIZE_8_0_INCH): 'SIMU',
     (SIMULATED_MODEL, SIZE_8_8_INCH): 'SIMU',
+    (SIMULATED_MODEL, SIZE_9_2_INCH): 'SIMU',
 }
 hw_lib_map = {"AUTO": "Automatic", "LHM": "LibreHardwareMonitor (admin.)", "PYTHON": "Python libraries",
               "STUB": "Fake random data", "STATIC": "Fake static data"}
@@ -318,13 +349,10 @@ class TuringConfigWindow:
     def load_theme_preview(self):
         theme_data = get_theme_data(self.theme_cb.get())
 
-        if theme_data and theme_data['display'].get("DISPLAY_SIZE", '3.5"') == SIZE_2_1_INCH:
-            theme_preview.paste(circular_mask, mask=circular_mask)
-
         try:
             theme_preview = Image.open(MAIN_DIRECTORY / "res" / "themes" / self.theme_cb.get() / "preview.png")
 
-            if theme_data['display'].get("DISPLAY_SIZE", '3.5"') == SIZE_2_1_INCH:
+            if theme_data and theme_data['display'].get("DISPLAY_SIZE", '3.5"') == SIZE_2_1_INCH:
                 # This is a circular screen: apply a circle mask over the preview
                 theme_preview.paste(circular_mask, mask=circular_mask)
         except:
@@ -394,8 +422,8 @@ class TuringConfigWindow:
         size = get_theme_size(self.config['config']['THEME'])
         size = size.replace(SIZE_2_1_INCH, SIZE_2_x_INCH)   # If a theme is for 2.1" then it also is for 2.8"
         try:
-            if size == SIZE_8_8_INCH and self.config['display']['REVISION'] == 'C_USB':
-                size = SIZE_8_8_INCH_USB
+            if size == SIZE_8_8_INCH and self.config['display']['REVISION'] == 'TUR_USB':
+                size = SIZE_8_8_INCH_NEWREV
             self.size_cb.set(size)
         except:
             self.size_cb.current(0)
@@ -540,7 +568,7 @@ class TuringConfigWindow:
     def on_size_change(self, e=None):
         size = self.size_cb.get()
         size = size.replace(SIZE_2_x_INCH, SIZE_2_1_INCH)  # For '2.1" / 2.8"' size, keep '2.1"' as size to get themes for
-        size = size.replace(SIZE_8_8_INCH_USB, SIZE_8_8_INCH)
+        size = size.replace(SIZE_8_8_INCH_NEWREV, SIZE_8_8_INCH)
         themes = get_themes(size)
         self.theme_cb.config(values=themes)
 

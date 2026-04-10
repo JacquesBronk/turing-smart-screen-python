@@ -39,7 +39,13 @@ from library.log import logger
 from library.lcd.lcd_comm import Orientation, LcdComm
 
 VENDOR_ID = 0x1cbe
-PRODUCT_ID = [0x0046, 0x0088, 0x0092]   # 4.6", 8.8", 9.2"
+PRODUCT_ID = [
+    0x0046, # Turing 4.6", 960x320
+    0x0052, # Turing 5.2", 1280x720
+    0x0080, # Turing 8.0", 1280x800
+    0x0088, # Turing 8.8", 1920x480
+    0x0092, # Turing 9.2", 1920x462
+]
 
 
 MAX_CHUNK_BYTES = 1024*1024  # Data sent to screen cannot exceed 1024MB or there will be a timeout
