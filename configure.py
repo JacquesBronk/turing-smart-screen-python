@@ -84,11 +84,11 @@ size_list = (
     SIZE_3_5_INCH,
     SIZE_4_6_INCH,
     SIZE_5_INCH,
-    # SIZE_5_2_INCH, Not implemented yet
+    SIZE_5_2_INCH,
     SIZE_8_INCH,
     SIZE_8_8_INCH,
     SIZE_8_8_INCH_NEWREV,
-    # SIZE_12_3_INCH, Not implemented yet
+    SIZE_12_3_INCH,
 )
 
 # Maps between config.yaml values and GUI description
