@@ -16,20 +16,15 @@ Supported operating systems : macOS, Windows, Linux (incl. Raspberry Pi), basica
 
 ### ✅ Supported smart screens models:
 
-| ✅ Turing Smart Screen 3.5"                           | ✅ Turing / TURZX 4.6"                       | ✅ Turing / TURZX 5" / 5.2"                  |
-|------------------------------------------------------|---------------------------------------------|---------------------------------------------|
-| <img src="res/docs/turing.webp"/>                    | <img src="res/docs/turing46inch.png"/>      | <img src="res/docs/turing5inch.png"/>       |
-| also improperly called "revision A" by the resellers | basic support (no video or storage for now) | basic support (no video or storage for now) |
+| ✅ Turing Smart Screen / TURZX                                                                                                                                                                                                                                                                                                                                                                  |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <img src="res/docs/turing.webp" width="30%" height="30%"/> <img src="res/docs/turing46inch.png" width="30%" height="30%"/> <img src="res/docs/turing5inch.png" width="30%" height="30%"/> <br/> <img src="res/docs/turing2inch.webp" width="30%" height="30%"/> <img src="res/docs/turing8inch.png" width="30%" height="30%"/> <img src="res/docs/turing8inch.webp" width="30%" height="30%"/> |
+| All available sizes and hardware revisions supported: **2.1" / 2.8" / 3.5" / 4.6" / 5" / 5.2" / 8.0" / 8.8" / 9.2" / 12.3"** <br/>UART and WinUSB protocols supported. Note: no video or storage support for now                                                                                                                                                                               |
 
-| ✅ Turing / TURZX 2.1" / 2.8"                | ✅ Turing / TURZX 8.0"                       | ✅ Turing / TURZX 8.8" / 9.2"                |
-|---------------------------------------------|---------------------------------------------|---------------------------------------------|
-| <img src="res/docs/turing2inch.webp"/>      | <img src="res/docs/turing8inch.png"/>       | <img src="res/docs/turing8inch.webp"/>      |
-| basic support (no video or storage for now) | basic support (no video or storage for now) | basic support (no video or storage for now) |
-
-| ✅ XuanFang 3.5"                                   | ✅ [UsbPCMonitor 3.5" / 5"](https://aliexpress.com/item/1005003931363455.html)                       | ✅ [Kipye Qiye Smart Display 3.5"](https://www.aliexpress.us/item/3256803899049957.html) |
-|---------------------------------------------------|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| <img src="res/docs/xuanfang.webp"/>               | <img src="res/docs/UsbPCMonitor_5inch.webp" width="60%" height="60%"/>                              | <img src="res/docs/kipye-qiye-35.webp" width="60%" height="60%"/>                       |
-| revision B & flagship (with backplate & RGB LEDs) | Unknown manufacturer, visually similar to Turing 3.5" / 5". Original software is `UsbPCMonitor.exe` | Front panel has an engraved inscription "奇叶智显" Qiye Zhixian (Qiye Smart Display)        |
+| ✅ XuanFang 3.5"                                   | ✅ [UsbPCMonitor 3.5" / 5"](https://aliexpress.com/item/1005003931363455.html)                       | ✅ Kipye Qiye Smart Display 3.5"                                                  |
+|---------------------------------------------------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| <img src="res/docs/xuanfang.webp"/>               | <img src="res/docs/UsbPCMonitor_5inch.webp" width="60%" height="60%"/>                              | <img src="res/docs/kipye-qiye-35.webp" width="60%" height="60%"/>                |
+| revision B & flagship (with backplate & RGB LEDs) | Unknown manufacturer, visually similar to Turing 3.5" / 5". Original software is `UsbPCMonitor.exe` | Front panel has an engraved inscription "奇叶智显" Qiye Zhixian (Qiye Smart Display) |
 
 | ✅ WeAct Studio Display FS V1 0.96"                            | ✅ WeAct Studio Display FS V1 3.5"                            |
 |---------------------------------------------------------------|--------------------------------------------------------------|
