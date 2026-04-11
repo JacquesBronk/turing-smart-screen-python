@@ -58,7 +58,9 @@ def _get_theme_orientation() -> Orientation:
 def _get_theme_size() -> tuple[int, int]:
     if config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '0.96"':
         return 80, 160
-    if config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '2.1"':
+    elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '2.1"':
+        return 480, 480
+    elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '2.8"':
         return 480, 480
     elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '3.5"':
         return 320, 480
@@ -66,8 +68,16 @@ def _get_theme_size() -> tuple[int, int]:
         return 320, 960
     elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '5"':
         return 480, 800
+    elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '5.2"':
+        return 720, 1280
+    elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '8"':
+        return 800, 1280
     elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '8.8"':
         return 480, 1920
+    elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '9.2"':
+        return 480, 1920 # 9.2" displays are 1920x462 but using 1920x480 to be compatible with 8.8" themes
+    elif config.THEME_DATA["display"].get("DISPLAY_SIZE", '') == '12.3"':
+        return 720, 1920
     else:
         logger.warning(
             f'Cannot find valid DISPLAY_SIZE property in selected theme {config.CONFIG_DATA["config"]["THEME"]}, defaulting to 3.5"')
