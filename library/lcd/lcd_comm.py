@@ -257,9 +257,9 @@ class LcdComm(ABC):
         font_color = parse_color(font_color)
         background_color = parse_color(background_color)
 
-        assert x <= self.get_width(), 'Text X coordinate ' + str(x) + ' must be <= display width ' + str(
+        assert x <= self.get_width(), 'Text "' + text + '" X coordinate ' + str(x) + ' must be <= display width ' + str(
             self.get_width())
-        assert y <= self.get_height(), 'Text Y coordinate ' + str(y) + ' must be <= display height ' + str(
+        assert y <= self.get_height(), 'Text "' + text + '" Y coordinate ' + str(y) + ' must be <= display height ' + str(
             self.get_height())
         assert len(text) > 0, 'Text must not be empty'
         assert font_size > 0, "Font size must be > 0"

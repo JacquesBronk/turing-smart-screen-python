@@ -127,7 +127,7 @@ begin
     'If you do not install it, some hardware metrics such as clocks, temperatures, etc. will be limited or unavailable.' + #13#10 +
     'More information: https://pawnio.eu/';
 
-  { Création de la case à cocher }
+  { Checkbox creation }
   InstallPawnIOCheckBox := TNewCheckBox.Create(PagePawnIO);
   InstallPawnIOCheckBox.Parent := PagePawnIO.Surface;
   InstallPawnIOCheckBox.Caption := 'Install / update PawnIO driver (admin. rights needed)';

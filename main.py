@@ -29,7 +29,6 @@
 from library.pythoncheck import check_python_version
 check_python_version()
 
-import glob
 import os
 import sys
 

@@ -24,6 +24,7 @@ import queue
 import shutil
 import struct
 import subprocess
+import sys
 import time
 from io import BytesIO
 from pathlib import Path
@@ -41,7 +42,7 @@ VENDOR_ID = 0x1cbe
 
 # Map of display supported product IDs and their respective resolution in portrait mode
 PRODUCT_ID = {0x0046: (320, 960),  # Turing 4.6"
-    0x0052: (720, 1280),  # Turing 5.2"
+    0x0050: (720, 1280),  # Turing 5.2"
     0x0080: (800, 1280),  # Turing 8.0"
     0x0088: (480, 1920),  # Turing 8.8"
     0x0092: (462, 1920),  # Turing 9.2"
@@ -461,7 +462,19 @@ def find_usb_device():
     dev = None
     dev_pid = None
     for pid in PRODUCT_ID.keys():
-        dev = usb.core.find(idVendor=VENDOR_ID, idProduct=pid)
+        try:
+            dev = usb.core.find(idVendor=VENDOR_ID, idProduct=pid)
+        except usb.core.NoBackendError as e:
+            print("""[ERROR] %s: libusb could not be loaded from your system. Make sure it is installed.
+On Linux and BSD, these will generally be available on the distribution's official repositories.
+On macOS, libusb 1.0 can easily be installed through Homebrew: brew install libusb
+On Windows, manually copy 'external/libusb-1.0/libusb-1.0.dll' to C:\\Windows\\System32""" % str(
+                e))
+            try:
+                sys.exit(0)
+            except:
+                os._exit(0)
+
         dev_pid = pid
         if dev is not None:
             break
