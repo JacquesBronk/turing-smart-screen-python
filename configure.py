@@ -36,7 +36,7 @@ import babel
 try:
     import tkinter.ttk as ttk
     from tkinter import *
-    from PIL import ImageTk
+    from PIL import ImageTk, ImageFont, ImageDraw
     import psutil
     import ruamel.yaml
     import sv_ttk
@@ -44,6 +44,7 @@ try:
     from PIL import Image
     from serial.tools.list_ports import comports
     from tktooltip import ToolTip
+
 except Exception as e:
     print("""Import error: %s
 Please follow start guide to install required packages: https://github.com/mathoudebine/turing-smart-screen-python/wiki/System-monitor-:-how-to-start
@@ -169,6 +170,26 @@ circular_mask = Image.open(MAIN_DIRECTORY / "res/backgrounds/circular-mask.png")
 DISABLED_COLOR = "#C0C0C0"
 
 
+def emoji_to_img(size, text):
+    # Use platform-specific emoji font
+    if sys.platform == "win32":
+        font = ImageFont.truetype("seguiemj.ttf", size=int(round(size * 72 / 96, 0)))
+        # pixels = points * 96 / 72 : 96 is windowsDPI
+        im = Image.new("RGBA", (size, size), (255, 255, 255, 0))
+        draw = ImageDraw.Draw(im)
+        draw.text((size / 2, size / 2), text, embedded_color=True, font=font, anchor="mm")
+    else:
+        emoji_font = str(MAIN_DIRECTORY / "res" / "fonts" / "NotoColorEmoji" / "NotoColorEmoji.ttf")
+        # Noto Color Emoji font can only be used with size=109
+        font = ImageFont.truetype(emoji_font, size=109)
+        bbox = font.getbbox(text)
+        im = Image.new("RGBA", bbox[2:], (255, 255, 255, 0))
+        draw = ImageDraw.Draw(im)
+        draw.text((0,0), text, embedded_color=True, font=font)
+        im.thumbnail((size, size), Image.Resampling.LANCZOS)
+    return ImageTk.PhotoImage(im)
+
+
 def get_theme_data(name: str):
     dir = THEMES_DIR / name
 
@@ -227,7 +248,7 @@ class TuringConfigWindow:
     def __init__(self):
         self.window = Tk()
         self.window.title('Turing System Monitor configuration')
-        self.window.geometry("820x580")
+        self.window.geometry("820x590")
         self.window.iconphoto(True, PhotoImage(file=str(
             MAIN_DIRECTORY / "res/icons/monitor-icon-17865/64.png")))  # When window gets focus again, reload theme preview in case it has been updated by theme editor
         self.window.bind("<FocusIn>", self.on_theme_change)
@@ -237,7 +258,7 @@ class TuringConfigWindow:
         self.more_config_window = MoreConfigWindow(self)
 
         # Make TK look better with Sun Valley ttk theme
-        sv_ttk.set_theme("light")
+        sv_ttk.use_light_theme()
 
         self.theme_preview_img = None
         self.theme_preview = ttk.Label(self.window)
@@ -336,22 +357,30 @@ class TuringConfigWindow:
         version_label = ttk.Label(self.window, text=version, foreground=DISABLED_COLOR)
         version_label.place(x=5, y=550)
 
-        self.weather_ping_btn = ttk.Button(self.window, text="Weather & ping",
-                                           command=lambda: self.on_weatherping_click())
-        self.weather_ping_btn.place(x=80, y=520, height=50, width=130)
+        self.weather_ping_emoji = emoji_to_img(20, "⛅")
+        self.weather_ping_btn = ttk.Button(self.window, text="Weather\n& Ping", image=self.weather_ping_emoji,
+                                           compound="left", command=lambda: self.on_weatherping_click())
+        self.weather_ping_btn.place(x=80, y=520, height=60, width=130)
 
-        self.open_theme_folder_btn = ttk.Button(self.window, text="Open themes\nfolder",
-                                                command=lambda: self.on_open_theme_folder_click())
-        self.open_theme_folder_btn.place(x=220, y=520, height=50, width=130)
+        self.open_theme_emoji = emoji_to_img(20, "📂")
+        self.open_theme_folder_btn = ttk.Button(self.window, text="Open themes\nfolder", image=self.open_theme_emoji,
+                                                compound="left", command=lambda: self.on_open_theme_folder_click())
+        self.open_theme_folder_btn.place(x=220, y=520, height=60, width=130)
 
-        self.edit_theme_btn = ttk.Button(self.window, text="Edit theme", command=lambda: self.on_theme_editor_click())
-        self.edit_theme_btn.place(x=360, y=520, height=50, width=130)
+        self.edit_theme_emoji = emoji_to_img(20, "🎨")
+        self.edit_theme_btn = ttk.Button(self.window, text="Edit theme", image=self.edit_theme_emoji, compound="left",
+                                         command=lambda: self.on_theme_editor_click())
+        self.edit_theme_btn.place(x=360, y=520, height=60, width=130)
 
-        self.save_btn = ttk.Button(self.window, text="Save settings", command=lambda: self.on_save_click())
-        self.save_btn.place(x=500, y=520, height=50, width=130)
+        self.save_emoji = emoji_to_img(20, "💾")
+        self.save_btn = ttk.Button(self.window, text="Save settings", image=self.save_emoji, compound="left",
+                                   command=lambda: self.on_save_click())
+        self.save_btn.place(x=500, y=520, height=60, width=130)
 
-        self.save_run_btn = ttk.Button(self.window, text="Save and run", command=lambda: self.on_saverun_click())
-        self.save_run_btn.place(x=640, y=520, height=50, width=130)
+        self.save_run_emoji = emoji_to_img(20, "▶️")
+        self.save_run_btn = ttk.Button(self.window, text="Save and run", image=self.save_run_emoji, compound="left",
+                                       command=lambda: self.on_saverun_click())
+        self.save_run_btn.place(x=640, y=520, height=60, width=140)
 
         self.config = None
         self.load_config_values()
@@ -657,7 +686,7 @@ class MoreConfigWindow:
         self.main_window = main_window
 
         # Make TK look better with Sun Valley ttk theme
-        sv_ttk.set_theme("light")
+        sv_ttk.use_light_theme()
 
         self.ping_label = ttk.Label(self.window, text='Hostname / IP to ping')
         self.ping_label.place(x=10, y=10)
