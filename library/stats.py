@@ -154,7 +154,7 @@ def display_themed_progress_bar(theme_data, value):
         bar_outline=theme_data.get("BAR_OUTLINE", False),
         background_color=theme_data.get("BACKGROUND_COLOR", (255, 255, 255)),
         background_image=get_theme_file_path(theme_data.get("BACKGROUND_IMAGE", None)),
-        inverse_direction=theme_data.get("INVERSE_DIRECTION", False)
+        reverse_direction=theme_data.get("REVERSE_DIRECTION", False)
     )
 
 

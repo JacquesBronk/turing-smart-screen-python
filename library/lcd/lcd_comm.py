@@ -327,7 +327,7 @@ class LcdComm(ABC):
                            bar_outline: bool = True,
                            background_color: Color = (255, 255, 255),
                            background_image: Optional[str] = None,
-                           inverse_direction: Optional[bool] = False):
+                           reverse_direction: Optional[bool] = False):
         # Generate a progress bar and display it
         # Provide the background image path to display progress bar with transparent background
 
@@ -375,12 +375,12 @@ class LcdComm(ABC):
         y2 = height - 1
 
         if width > height:
-            if inverse_direction is True:
+            if reverse_direction is True:
                 x1 = width - bar_filled_width
             else:
                 x1 = bar_filled_width
         else:
-            if inverse_direction is True:
+            if reverse_direction is True:
                 y2 = height - bar_filled_height
             else:
                 y1 = bar_filled_height
