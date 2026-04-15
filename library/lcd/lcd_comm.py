@@ -378,7 +378,7 @@ class LcdComm(ABC):
             if reverse_direction is True:
                 x1 = width - bar_filled_width
             else:
-                x1 = bar_filled_width
+                x2 = bar_filled_width
         else:
             if reverse_direction is True:
                 y2 = height - bar_filled_height
