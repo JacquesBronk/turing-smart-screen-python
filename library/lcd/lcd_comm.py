@@ -376,14 +376,14 @@ class LcdComm(ABC):
 
         if width > height:
             if reverse_direction is True:
-                x1 = width - bar_filled_width
+                x1 = width - 1 - bar_filled_width
             else:
                 x2 = bar_filled_width
         else:
             if reverse_direction is True:
-                y2 = height - bar_filled_height
+                y2 = bar_filled_height
             else:
-                y1 = bar_filled_height
+                y1 = height - 1 - bar_filled_height
         draw.rectangle([x1, y1, x2, y2], fill=bar_color, outline=bar_color)
 
         if bar_outline:
