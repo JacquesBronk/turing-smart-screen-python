@@ -116,12 +116,18 @@ if __name__ == "__main__":
     def on_configure_tray(tray_icon, item):
         logger.info("Configure from tray icon")
 
-        configure_file = next(MAIN_DIRECTORY.glob("configure.*"))
+        try:
+            # Load Python file with local python interpreter (useful for venvs)
+            configure_file = next(MAIN_DIRECTORY.glob("configure.py"))
+            subprocess.Popen([sys.executable, str(configure_file)])
+        except:
+            # Load binary (for releases) or Python file with system interpreter
+            configure_file = next(MAIN_DIRECTORY.glob("configure*"))
+            if platform.system() == "Windows":
+                subprocess.Popen([str(configure_file)], shell=True)
+            else:
+                subprocess.Popen([str(configure_file)])
 
-        if platform.system() == "Windows":
-            subprocess.Popen([str(configure_file)], shell=True)
-        else:
-            subprocess.Popen([str(configure_file)])
         clean_stop(tray_icon)
 
     def on_exit_tray(tray_icon, item):

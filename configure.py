@@ -163,8 +163,10 @@ weather_lang_map = {"sq": "Albanian", "af": "Afrikaans", "ar": "Arabic", "az": "
 
 MAIN_DIRECTORY = Path(__file__).resolve().parent
 THEMES_DIR = MAIN_DIRECTORY / "res/themes"
+VERSION_FILE = MAIN_DIRECTORY / "version.txt"
 
 circular_mask = Image.open(MAIN_DIRECTORY / "res/backgrounds/circular-mask.png")
+DISABLED_COLOR = "#C0C0C0"
 
 
 def get_theme_data(name: str):
@@ -322,6 +324,17 @@ class TuringConfigWindow:
                                    "Manually select your CPU fan from the list.\n\n"
                                    "Fans missing from the list? Install lm-sensors package\n"
                                    "and run 'sudo sensors-detect' command, then reboot.")
+
+        try:
+            version = open(VERSION_FILE).readline()
+        except:
+            try:
+                version = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('utf-8')
+            except:
+                version = "0.0.0"
+
+        version_label = ttk.Label(self.window, text=version, foreground=DISABLED_COLOR)
+        version_label.place(x=5, y=550)
 
         self.weather_ping_btn = ttk.Button(self.window, text="Weather & ping",
                                            command=lambda: self.on_weatherping_click())
@@ -510,13 +523,6 @@ class TuringConfigWindow:
         self.more_config_window.show()
 
     def on_open_theme_folder_click(self):
-        # path = f'"{MAIN_DIRECTORY}res/themes"'
-        # if platform.system() == "Windows":
-        #    os.startfile(path)
-        # elif platform.system() == "Darwin":
-        #    subprocess.Popen(["open", path])
-        # else:
-        #    subprocess.Popen(["xdg-open", path])
         path = MAIN_DIRECTORY / "res/themes"
 
         if platform.system() == "Windows":
@@ -527,24 +533,35 @@ class TuringConfigWindow:
             subprocess.Popen(["xdg-open", str(path)])
 
     def on_theme_editor_click(self):
-        theme_editor = next(MAIN_DIRECTORY.glob("theme-editor.*"))
-
-        if platform.system() == "Windows":
-            subprocess.Popen([str(theme_editor), self.theme_cb.get()], shell=True)
-        else:
-            subprocess.Popen([str(theme_editor), self.theme_cb.get()])
+        try:
+            # Load Python file with local python interpreter (useful for venvs)
+            theme_editor = next(MAIN_DIRECTORY.glob("theme-editor.py"))
+            subprocess.Popen([sys.executable, str(theme_editor), self.theme_cb.get()])
+        except:
+            # Load binary (for releases) or Python file with system interpreter
+            theme_editor = next(MAIN_DIRECTORY.glob("theme-editor*"))
+            if platform.system() == "Windows":
+                subprocess.Popen([str(theme_editor), self.theme_cb.get()], shell=True)
+            else:
+                subprocess.Popen([str(theme_editor), self.theme_cb.get()])
 
     def on_save_click(self):
         self.save_config_values()
 
     def on_saverun_click(self):
         self.save_config_values()
-        main_file = next(MAIN_DIRECTORY.glob("main.*"))
 
-        if platform.system() == "Windows":
-            subprocess.Popen([str(main_file)], shell=True)
-        else:
-            subprocess.Popen([str(main_file)])
+        try:
+            # Load Python file with local python interpreter (useful for venvs)
+            main_file = next(MAIN_DIRECTORY.glob("main.py"))
+            subprocess.Popen([sys.executable, str(main_file)])
+        except:
+            # Load binary (for releases) or Python file with system interpreter
+            main_file = next(MAIN_DIRECTORY.glob("main*"))
+            if platform.system() == "Windows":
+                subprocess.Popen([str(main_file)], shell=True)
+            else:
+                subprocess.Popen([str(main_file)])
 
         self.window.destroy()
 
@@ -556,10 +573,10 @@ class TuringConfigWindow:
         self.show_hide_brightness_warning()
         model = self.model_cb.get()
         if model == SIMULATED_MODEL:
-            self.com_cb.configure(state="disabled", foreground="#C0C0C0")
-            self.orient_cb.configure(state="disabled", foreground="#C0C0C0")
+            self.com_cb.configure(state="disabled", foreground=DISABLED_COLOR)
+            self.orient_cb.configure(state="disabled", foreground=DISABLED_COLOR)
             self.brightness_slider.configure(state="disabled")
-            self.brightness_val_label.configure(foreground="#C0C0C0")
+            self.brightness_val_label.configure(foreground=DISABLED_COLOR)
         else:
             self.com_cb.configure(state="readonly", foreground="#000")
             self.orient_cb.configure(state="readonly", foreground="#000")
@@ -591,8 +608,8 @@ class TuringConfigWindow:
     def on_hwlib_change(self, e=None):
         hwlib = [k for k, v in hw_lib_map.items() if v == self.hwlib_cb.get()][0]
         if hwlib == "STUB" or hwlib == "STATIC":
-            self.eth_cb.configure(state="disabled", foreground="#C0C0C0")
-            self.wl_cb.configure(state="disabled", foreground="#C0C0C0")
+            self.eth_cb.configure(state="disabled", foreground=DISABLED_COLOR)
+            self.wl_cb.configure(state="disabled", foreground=DISABLED_COLOR)
         else:
             self.eth_cb.configure(state="readonly", foreground="#000")
             self.wl_cb.configure(state="readonly", foreground="#000")
