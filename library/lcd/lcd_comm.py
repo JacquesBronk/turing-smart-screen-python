@@ -359,11 +359,11 @@ class LcdComm(ABC):
 
         # Draw progress bar
         if width > height:
-            bar_filled_width = (value / (max_value - min_value) * width) - 1
+            bar_filled_width = ((value - min_value) / (max_value - min_value) * width) - 1
             if bar_filled_width < 0:
                 bar_filled_width = 0
         else:
-            bar_filled_height = (value / (max_value - min_value) * height) - 1
+            bar_filled_height = ((value - min_value) / (max_value - min_value) * height) - 1
             if bar_filled_height < 0:
                 bar_filled_height = 0
         draw = ImageDraw.Draw(bar_image)
