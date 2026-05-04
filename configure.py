@@ -76,11 +76,13 @@ SIZE_8_INCH = "8\""
 SIZE_8_8_INCH = "8.8\""
 SIZE_8_8_INCH_NEWREV = "8.8\" / 9.2\" (V1.X new HW rev.)"
 SIZE_12_3_INCH = "12.3\""
+SIZE_2_8_ROUND_USB = "2.8\" round (V1.X new HW rev.)"
 
 # List of sizes that can be selected
 size_list = (
     SIZE_0_96_INCH,
     SIZE_2_x_INCH,
+    SIZE_2_8_ROUND_USB,
     SIZE_3_5_INCH,
     SIZE_4_6_INCH,
     SIZE_5_INCH,
@@ -107,6 +109,7 @@ revision_and_size_to_model_map = {
     ('TUR_USB', SIZE_8_8_INCH): TURING_MODEL,
     ('TUR_USB', SIZE_8_8_INCH_NEWREV): TURING_MODEL,
     ('TUR_USB', SIZE_12_3_INCH): TURING_MODEL,
+    ('TUR_USB', SIZE_2_8_ROUND_USB): TURING_MODEL,
     ('WEACT_A', SIZE_3_5_INCH): WEACT_MODEL,
     ('WEACT_B', SIZE_0_96_INCH): WEACT_MODEL,
 
@@ -131,6 +134,7 @@ model_and_size_to_revision_map = {
     (TURING_MODEL, SIZE_8_8_INCH): 'C',
     (TURING_MODEL, SIZE_8_8_INCH_NEWREV): 'TUR_USB',
     (TURING_MODEL, SIZE_12_3_INCH): 'TUR_USB',
+    (TURING_MODEL, SIZE_2_8_ROUND_USB): 'TUR_USB',
     (USBPCMONITOR_MODEL, SIZE_3_5_INCH): 'A',
     (USBPCMONITOR_MODEL, SIZE_5_INCH): 'A',
     (WEACT_MODEL, SIZE_0_96_INCH): 'WEACT_B',
@@ -433,13 +437,15 @@ class TuringConfigWindow:
 
         # Guess display size from theme in the configuration
         size = get_theme_size(self.config['config']['THEME'])
-        size = size.replace(_SIZE_2_1_INCH, SIZE_2_x_INCH)  # If a theme is for 2.1" then it is for all 2.x"
-        size = size.replace(_SIZE_2_8_INCH, SIZE_2_x_INCH)  # If a theme is for 2.8" then it is for all 2.x"
-        size = size.replace(_SIZE_9_2_INCH,
-                            SIZE_8_8_INCH_NEWREV)  # If a theme is for 9.2" then it is for 8.8"/9.2" (new rev)
+        if size == _SIZE_2_1_INCH or size == _SIZE_2_8_INCH:
+            size = SIZE_2_x_INCH  # If a theme is for 2.1" or 2.8" then it is for all 2.x"
+        elif size == _SIZE_9_2_INCH:
+            size = SIZE_8_8_INCH_NEWREV  # If a theme is for 9.2" then it is for 8.8"/9.2" (new rev)
         try:
             if size == SIZE_8_8_INCH and self.config['display']['REVISION'] == 'TUR_USB':
                 size = SIZE_8_8_INCH_NEWREV
+            if size == SIZE_2_x_INCH and self.config['display']['REVISION'] == 'TUR_USB':
+                size = SIZE_2_8_ROUND_USB
             self.size_cb.set(size)
         except:
             self.size_cb.current(0)
@@ -587,7 +593,7 @@ class TuringConfigWindow:
         size = self.size_cb.get()
 
         # For '2.1" / 2.8"' size, search for themes of both sizes
-        if size == SIZE_2_x_INCH:
+        if size == SIZE_2_x_INCH or size == SIZE_2_8_ROUND_USB:
             themes = get_themes(_SIZE_2_1_INCH)
             themes += get_themes(_SIZE_2_8_INCH)
         # For 8.8" & 9.2" sizes, search for themes of both sizes
