@@ -123,11 +123,11 @@ pages:
       net_up:   sum(rate(node_network_transmit_bytes_total{instance="node-a.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
     derived:
       ram_pct:      "100*(1-ram_a/ram_t)"
-      ram_used_g:   "(ram_t-ram_a)/1e9"
-      ram_total_g:  "ram_t/1e9"
+      ram_used_g:   "(ram_t-ram_a)/2**30"
+      ram_total_g:  "ram_t/2**30"
       disk_pct:     "100*(1-disk_a/disk_t)"
-      disk_used_g:  "(disk_t-disk_a)/1e9"
-      disk_total_g: "disk_t/1e9"
+      disk_used_g:  "(disk_t-disk_a)/2**30"
+      disk_total_g: "disk_t/2**30"
       uptime:       "str(int(up_s//86400))+'d '+str(int(up_s%86400//3600))+'h'"
       net_down_h:   "human_rate(net_down)"
       net_up_h:     "human_rate(net_up)"
@@ -155,11 +155,11 @@ pages:
       net_up:   sum(rate(node_network_transmit_bytes_total{instance="node-b.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
     derived:
       ram_pct:      "100*(1-ram_a/ram_t)"
-      ram_used_g:   "(ram_t-ram_a)/1e9"
-      ram_total_g:  "ram_t/1e9"
+      ram_used_g:   "(ram_t-ram_a)/2**30"
+      ram_total_g:  "ram_t/2**30"
       disk_pct:     "100*(1-disk_a/disk_t)"
-      disk_used_g:  "(disk_t-disk_a)/1e9"
-      disk_total_g: "disk_t/1e9"
+      disk_used_g:  "(disk_t-disk_a)/2**30"
+      disk_total_g: "disk_t/2**30"
       uptime:       "str(int(up_s//86400))+'d '+str(int(up_s%86400//3600))+'h'"
       net_down_h:   "human_rate(net_down)"
       net_up_h:     "human_rate(net_up)"
