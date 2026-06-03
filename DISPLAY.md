@@ -40,11 +40,21 @@ Home Assistant, kubectl, etc. is one small class in `apps/common.py`
 ## Page schema
 
 See the comment block at the top of `pages.yaml` — widgets (`bar`, `metric`,
-`radial`, `text`), format strings over a value namespace (local psutil values
-+ per-page query results + derived expressions), threshold/conditional color
-specs, optional `background:` art from any stock theme (the shipped CYBERDECK
-page traces live radial gauges over the stock Cyberdeck theme art), and
-`type: netmap` pages that embed the netmap app in the rotation.
+`radial`, `text`, `graph`, `cores`), format strings over a value namespace
+(local psutil values + per-page query results + derived expressions),
+threshold/conditional color specs, optional `background:` art from any stock
+theme (the shipped CYBERDECK page traces live radial gauges over the stock
+Cyberdeck theme art), and `type: netmap` pages that embed the netmap app in
+the rotation.
+
+Local values include network rates with auto-scaled units (`net_down_h`),
+per-core CPU (`cpu_cores`), CPU package power via RAPL (`cpu_watts`),
+`fan_rpm` and `nvme_temp` where the platform exposes them.
+
+`screen.schedule` in `display.yaml` dims or switches the panel off during
+time windows (night/away mode). Serial hiccups are handled by reopening the
+port and re-pushing the frame (panels are known to wedge after long sessions,
+upstream #562).
 
 ## Preview without a screen
 

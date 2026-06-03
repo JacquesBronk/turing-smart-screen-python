@@ -8,6 +8,9 @@ Type=simple
 User=jacquesb
 SupplementaryGroups=dialout
 WorkingDirectory=/home/jacquesb/turing-smart-screen
+# RAPL energy counters are root-only on recent kernels; grant read so the
+# cpu_watts value works (runs as root via the '+' prefix, harmless if absent)
+ExecStartPre=+-/usr/bin/chmod o+r /sys/class/powercap/intel-rapl:0/energy_uj
 ExecStart=/home/jacquesb/turing-smart-screen/venv/bin/python display.py
 Restart=always
 RestartSec=5

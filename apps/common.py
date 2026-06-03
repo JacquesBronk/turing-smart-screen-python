@@ -7,10 +7,12 @@ import os
 import time
 import json
 import socket
+import collections
 import urllib.parse
 import urllib.request
 
 import psutil
+from serial import SerialException
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
@@ -112,10 +114,90 @@ def fmt_uptime():
     return f"{d}d {h}h" if d else f"{h}h {s // 60}m"
 
 
+_RATE_STATE = {}
+
+
+def _delta_rate(key, current, now):
+    """Per-second rate from a monotonically increasing counter; None on first call."""
+    prev = _RATE_STATE.get(key)
+    _RATE_STATE[key] = (current, now)
+    if prev is None:
+        return None
+    dv, dt = current - prev[0], now - prev[1]
+    return dv / dt if dt > 0 and dv >= 0 else None
+
+
+_NET_SKIP = ("lo", "veth", "docker", "br-", "cni", "flannel", "kube", "tailscale")
+
+
+def _net_counters():
+    """Aggregate rx/tx bytes over physical-ish NICs (skips loopback/bridge/CNI)."""
+    rx = tx = 0
+    for name, io in psutil.net_io_counters(pernic=True).items():
+        if any(name.startswith(p) for p in _NET_SKIP):
+            continue
+        rx += io.bytes_recv
+        tx += io.bytes_sent
+    return rx, tx
+
+
+def human_rate(bps):
+    if bps is None:
+        return "-"
+    for unit in ("B/s", "KB/s", "MB/s", "GB/s"):
+        if bps < 1000 or unit == "GB/s":
+            break
+        bps /= 1000.0
+    return f"{bps:.0f} {unit}" if unit == "B/s" else f"{bps:.1f} {unit}"
+
+
+def _cpu_watts(now):
+    """CPU package power from intel RAPL (None if unreadable/AMD without rapl)."""
+    try:
+        with open("/sys/class/powercap/intel-rapl:0/energy_uj") as f:
+            uj = int(f.read())
+    except Exception:
+        return None
+    rate = _delta_rate("rapl_uj", uj, now)
+    return rate / 1e6 if rate is not None else None
+
+
+def _fan_rpm():
+    try:
+        for entries in psutil.sensors_fans().values():
+            if entries:
+                return entries[0].current
+    except Exception:
+        pass
+    return None
+
+
+def _nvme_temp():
+    try:
+        t = psutil.sensors_temperatures().get("nvme")
+        if t:
+            return max(s.current for s in t)
+    except Exception:
+        pass
+    return None
+
+
 def local_values():
     vm = psutil.virtual_memory()
     du = psutil.disk_usage("/")
+    now = time.monotonic()
+    rx, tx = _net_counters()
+    net_down = _delta_rate("net_rx", rx, now)
+    net_up = _delta_rate("net_tx", tx, now)
     return {
+        "net_down": net_down,
+        "net_up": net_up,
+        "net_down_h": human_rate(net_down),
+        "net_up_h": human_rate(net_up),
+        "cpu_cores": psutil.cpu_percent(percpu=True),
+        "cpu_watts": _cpu_watts(now),
+        "fan_rpm": _fan_rpm(),
+        "nvme_temp": _nvme_temp(),
         "cpu_pct": psutil.cpu_percent(),
         "ram_pct": vm.percent,
         "ram_used_g": vm.used / 1e9,
@@ -232,16 +314,67 @@ def draw_text(d, w, vals):
            fill=resolve_color(w.get("color"), vals), anchor=w.get("anchor", "mm"))
 
 
-WIDGETS = {"bar": draw_bar, "metric": draw_metric, "radial": draw_radial, "text": draw_text}
+_HISTORY = {}
+_SERIES_COLORS = ("accent", "ok", "warn", "bad")
 
 
-def push_frame(lcd, new, old=None, band=20):
-    """Push only the horizontal bands of `new` that differ from `old`.
+def draw_graph(d, w, vals):
+    """Line graph over a value's recent history (sampled while the page shows).
+    Single series via `value:`, multiple via `values: [a, b]` (+ `colors:`)."""
+    x, y = w["x"], w["y"]
+    gw, gh = w.get("w", 200), w.get("h", 60)
+    samples = int(w.get("samples", 60))
+    series = w.get("values") or ([w["value"]] if w.get("value") else [])
+    colors = w.get("colors") or []
+    d.rectangle([x, y, x + gw, y + gh], outline=TRACK)
+    if w.get("label"):
+        d.text((x, y - 18), str(w["label"]), font=font(13, "Medium"),
+               fill=COLORS["dim"], anchor="la")
+    if w.get("text"):
+        d.text((x + gw, y - 18), fmt(w["text"], vals), font=font(13, "Medium"),
+               fill=COLORS["fg"], anchor="ra")
+    vmin = float(w.get("min", 0))
+    for si, name in enumerate(series):
+        key = f"{name}@{x},{y}"
+        hist = _HISTORY.get(key)
+        if hist is None or hist.maxlen != samples:
+            hist = _HISTORY[key] = collections.deque(hist or [], maxlen=samples)
+        v = vals.get(name)
+        if isinstance(v, (int, float)):
+            hist.append(float(v))
+        if len(hist) < 2:
+            continue
+        vmax = float(w["max"]) if w.get("max") is not None else (max(hist) or 1.0)
+        span = max(vmax - vmin, 1e-9)
+        pad = samples - len(hist)  # anchor newest sample to the right edge
+        pts = [(x + gw * (pad + i) / (samples - 1),
+                y + gh - gh * min(max((val - vmin) / span, 0.0), 1.0))
+               for i, val in enumerate(hist)]
+        cname = colors[si] if si < len(colors) else _SERIES_COLORS[si % len(_SERIES_COLORS)]
+        d.line(pts, fill=COLORS.get(cname, COLORS["accent"]), width=2)
 
-    This is what keeps the screen wipe-free: value ticks push a few tiny
-    rectangles, and even page transitions skip unchanged chrome and blank
-    space. With old=None the full frame is pushed (first frame only).
-    """
+
+def draw_cores(d, w, vals):
+    """One mini vertical bar per CPU core."""
+    cores = vals.get("cpu_cores") or []
+    x, y, h = w["x"], w["y"], w.get("h", 40)
+    bw, gap = w.get("bar_w", 10), w.get("gap", 4)
+    if w.get("label"):
+        d.text((x, y - 18), str(w["label"]), font=font(13, "Medium"),
+               fill=COLORS["dim"], anchor="la")
+    for i, p in enumerate(cores):
+        cx = x + i * (bw + gap)
+        d.rectangle([cx, y, cx + bw, y + h], fill=TRACK)
+        fh = int(h * min(p, 100) / 100)
+        if fh:
+            d.rectangle([cx, y + h - fh, cx + bw, y + h], fill=threshold_color(p))
+
+
+WIDGETS = {"bar": draw_bar, "metric": draw_metric, "radial": draw_radial,
+           "text": draw_text, "graph": draw_graph, "cores": draw_cores}
+
+
+def _push_bands(lcd, new, old, band):
     if old is None:
         lcd.DisplayPILImage(new, 0, 0)
         return
@@ -253,6 +386,72 @@ def push_frame(lcd, new, old=None, band=20):
         if b:
             x0, by0, x1, by1 = b
             lcd.DisplayPILImage(new.crop((x0, y0 + by0, x1, y0 + by1)), x0, y0 + by0)
+
+
+def push_frame(lcd, new, old=None, band=20):
+    """Push only the horizontal bands of `new` that differ from `old`.
+
+    Value ticks push a few tiny rectangles; page transitions skip unchanged
+    chrome and blank space. With old=None the full frame is pushed.
+
+    On a serial hiccup (devices are known to wedge after hours, upstream #562)
+    the port is reopened once and the full frame re-pushed.
+    """
+    try:
+        _push_bands(lcd, new, old, band)
+    except (SerialException, OSError):
+        try:
+            lcd.closeSerial()
+        except Exception:
+            pass
+        time.sleep(2)
+        lcd.openSerial()
+        _push_bands(lcd, new, None, band)  # panel state unknown -> full redraw
+
+
+def _parse_hm(s):
+    hh, mm = str(s).split(":")
+    return int(hh) * 60 + int(mm)
+
+
+def _in_window(now_min, frm, to):
+    return frm <= now_min < to if frm <= to else (now_min >= frm or now_min < to)
+
+
+class ScreenScheduler:
+    """Applies `screen.schedule` windows from display.yaml: dim the backlight
+    or switch the panel off during time ranges (night/away mode)."""
+
+    def __init__(self, lcd, screen_cfg):
+        self.lcd = lcd
+        cfg = screen_cfg or {}
+        self.default = int(cfg.get("brightness", 20))
+        self.windows = cfg.get("schedule") or []
+        self.applied = ("on", self.default)
+
+    def tick(self):
+        """Apply the window for the current time; False while the panel is off."""
+        t = time.localtime()
+        now_min = t.tm_hour * 60 + t.tm_min
+        state = ("on", self.default)
+        for win in self.windows:
+            try:
+                if _in_window(now_min, _parse_hm(win.get("from", "00:00")),
+                              _parse_hm(win.get("to", "00:00"))):
+                    state = ("off", 0) if win.get("off") \
+                        else ("on", int(win.get("brightness", self.default)))
+                    break
+            except Exception:
+                continue
+        if state != self.applied:
+            if state[0] == "off":
+                self.lcd.ScreenOff()
+            else:
+                if self.applied[0] == "off":
+                    self.lcd.ScreenOn()
+                self.lcd.SetBrightness(state[1])
+            self.applied = state
+        return state[0] == "on"
 
 
 # ---------- lcd ----------

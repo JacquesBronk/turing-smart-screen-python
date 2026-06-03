@@ -92,9 +92,13 @@ def run(lcd, display_cfg):
     import psutil
     psutil.cpu_percent()  # prime the first reading
 
+    sched = c.ScreenScheduler(lcd, display_cfg.get("screen"))
     idx = 0
     prev = None  # last frame on the panel; every push is a diff against it
     while True:
+        if not sched.tick():  # night/away window: panel off, check back shortly
+            time.sleep(30)
+            continue
         try:
             cfg = load_pages_cfg(pages_file)  # live reload; keep last good on error
         except Exception:

@@ -11,6 +11,9 @@
 #   radial: {type: radial, x, y, r, width, pct: <value-name>, text, size, label, track: true}
 #           arc gauge from 12 o'clock; omit `track` to trace background ring art
 #   text:   {type: text, x, y, size, weight, family, anchor, text: "<format>", color: <spec>}
+#   graph:  {type: graph, x, y, w, h, value: <name> | values: [..], colors: [..],
+#            min, max, samples, label, text} -- history sampled while page is visible
+#   cores:  {type: cores, x, y, h, bar_w, gap, label} -- per-core CPU mini-bars
 #
 # Page types:
 #   (default)       widget page as below
@@ -26,7 +29,9 @@
 #
 # text format: python format string over the value namespace; unavailable -> "-".
 # Local values (always): cpu_pct ram_pct ram_used_g ram_total_g disk_pct
-#                        disk_used_g disk_total_g temp load1 uptime
+#                        disk_used_g disk_total_g temp load1 uptime time_hm
+#                        net_down net_up (B/s)  net_down_h net_up_h (auto-unit)
+#                        cpu_cores (list)  cpu_watts (RAPL)  fan_rpm  nvme_temp
 #
 # color spec:
 #   fg | dim | accent | ok | warn | bad      fixed color
@@ -45,6 +50,20 @@ pages:
       - {type: metric, x: 300, y: 58,  label: TEMP,   text: "{temp:.0f}°C", color: "auto:temp:75:90"}
       - {type: metric, x: 300, y: 138, label: LOAD,   text: "{load1:.2f}"}
       - {type: metric, x: 300, y: 218, label: UPTIME, text: "{uptime}"}
+      - {type: cores,  x: 16,  y: 248, h: 36, bar_w: 10, gap: 4, label: CORES}
+      - {type: text,   x: 150, y: 254, size: 13, anchor: lm, text: "DN {net_down_h}"}
+      - {type: text,   x: 150, y: 274, size: 13, anchor: lm, text: "UP {net_up_h}"}
+
+  - title: TRENDS
+    widgets:
+      - {type: graph, x: 16,  y: 84,  w: 215, h: 80, values: [cpu_pct, ram_pct], colors: [accent, ok],
+         max: 100, samples: 90, label: CPU / RAM, text: "{cpu_pct:.0f}% / {ram_pct:.0f}%"}
+      - {type: graph, x: 250, y: 84,  w: 215, h: 80, value: temp, min: 30, max: 90,
+         samples: 90, label: TEMP, text: "{temp:.0f}°C"}
+      - {type: graph, x: 16,  y: 205, w: 215, h: 80, value: net_down,
+         samples: 90, label: NET DOWN, text: "{net_down_h}"}
+      - {type: graph, x: 250, y: 205, w: 215, h: 80, value: net_up,
+         samples: 90, label: NET UP, text: "{net_up_h}"}
 
   - title: K3S CLUSTER
     queries:

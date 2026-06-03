@@ -80,8 +80,12 @@ def run(lcd, display_cfg):
 
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
+    sched = c.ScreenScheduler(lcd, display_cfg.get("screen"))
     prev = None
     while True:
+        if not sched.tick():
+            time.sleep(30)
+            continue
         frame = render(gather_hosts(src, nm_cfg), nm_cfg)
         c.push_frame(lcd, frame, prev)
         prev = frame

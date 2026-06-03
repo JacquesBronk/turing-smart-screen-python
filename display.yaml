@@ -6,6 +6,11 @@ mode: carousel        # standard | carousel | netmap
 screen:
   orientation: landscape       # landscape | reverse_landscape
   brightness: 20
+  # Night/away mode: dim or switch the panel off during time windows.
+  # Windows are checked every loop tick; first match wins. Applied on restart.
+  # schedule:
+  #   - {from: "22:30", to: "06:30", brightness: 5}
+  #   - {from: "01:00", to: "06:00", off: true}
 
 # Named data sources. Apps reference these by name; `prom` is the default.
 # Add more prometheus endpoints (or future source types) here.
