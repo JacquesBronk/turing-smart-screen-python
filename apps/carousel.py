@@ -31,9 +31,12 @@ def page_values(page, sources):
         else:
             src, query = sources.get("prom"), q
         vals[name] = src.value(query) if src else None
+    env = {"__builtins__": {}, "human_rate": c.human_rate,
+           "min": min, "max": max, "round": round, "int": int,
+           "str": str, "abs": abs}
     for name, expr in (page.get("derived") or {}).items():
         try:
-            vals[name] = eval(expr, {"__builtins__": {}}, dict(vals))
+            vals[name] = eval(expr, env, dict(vals))
         except Exception:
             vals[name] = None
     return vals
@@ -79,8 +82,11 @@ def run(lcd, display_cfg):
     sources = c.build_sources(display_cfg)
     cfg = load_pages_cfg(pages_file)
 
+    def active_pages(cfg):
+        return [p for p in (cfg.get("pages") or []) if not p.get("disabled")]
+
     if os.environ.get("ONCE") == "1":
-        pages = cfg.get("pages") or []
+        pages = active_pages(cfg)
         for k, page in enumerate(pages):
             p = f"/tmp/carousel_{k}.png"
             render_page(page, k, len(pages), sources, display_cfg).save(p)
@@ -103,14 +109,14 @@ def run(lcd, display_cfg):
             cfg = load_pages_cfg(pages_file)  # live reload; keep last good on error
         except Exception:
             pass
-        pages = cfg.get("pages") or []
+        pages = active_pages(cfg)
         if not pages:
             time.sleep(2)
             continue
         idx %= len(pages)
         page = pages[idx]
-        dwell = float(cfg.get("dwell", 8))
-        refresh = float(cfg.get("refresh", 2))
+        dwell = float(page.get("dwell") or cfg.get("dwell", 8))
+        refresh = float(page.get("refresh") or cfg.get("refresh", 2))
 
         frame = render_page(page, idx, len(pages), sources, display_cfg)
         c.push_frame(lcd, frame, prev)

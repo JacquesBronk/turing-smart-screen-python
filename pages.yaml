@@ -23,9 +23,14 @@
 # Page options:
 #   background: res/themes/<name>/background.png   draw widgets over theme art
 #   header: false / footer: false                  hide chrome (for art pages)
+#   disabled: true                                 keep the page, skip the rotation
+#   dwell / refresh                                per-page overrides of the globals
 #   queries:  name: <promql>                       value from the default `prom` source
 #             name: {source: <name>, query: ...}   value from a named source (display.yaml)
-#   derived:  name: <python expr over values>      computed values
+#   derived:  name: <python expr over values>      computed values; helpers available:
+#                                                  human_rate min max round int str abs
+#   NOTE: queries/derived may reuse local value names (cpu_pct, ram_pct, ...) to
+#   override them -- that's how remote-host pages reuse the HOST widget layout.
 #
 # text format: python format string over the value namespace; unavailable -> "-".
 # Local values (always): cpu_pct ram_pct ram_used_g ram_total_g disk_pct
@@ -38,7 +43,7 @@
 #   auto:<name>[:warn:bad]                   green/amber/red by thresholds (default 70:90)
 #   ok_if:<expr>[:<else-color>]              OK when expr true, else bad (or <else-color>)
 
-dwell: 8
+dwell: 60
 refresh: 2
 
 pages:
@@ -98,12 +103,81 @@ pages:
       - {type: metric, x: 16,  y: 170, label: CPU,      text: "{cpu:.0f}%", color: "auto:cpu"}
       - {type: metric, x: 176, y: 170, label: MEM,      text: "{mem:.0f}%", color: "auto:mem"}
 
-  # The netmap app embedded as a page (settings inherit from display.yaml `netmap:`)
+  # The netmap app embedded as a page (settings inherit from display.yaml `netmap:`).
+  # Fast refresh animates the packet dots on spokes with live traffic; host/traffic
+  # data itself is cached and only re-queried every `data_refresh` (5s) seconds.
   - type: netmap
+    refresh: 0.5
+
+  - title: NODE-A HOST
+    queries:
+      cpu_pct: 100-(avg(rate(node_cpu_seconds_total{instance="node-a.example:9100",mode="idle"}[2m]))*100)
+      ram_t:   node_memory_MemTotal_bytes{instance="node-a.example:9100"}
+      ram_a:   node_memory_MemAvailable_bytes{instance="node-a.example:9100"}
+      disk_t:  node_filesystem_size_bytes{instance="node-a.example:9100",mountpoint="/"}
+      disk_a:  node_filesystem_avail_bytes{instance="node-a.example:9100",mountpoint="/"}
+      temp:    max(node_hwmon_temp_celsius{instance="node-a.example:9100"})
+      load1:   node_load1{instance="node-a.example:9100"}
+      up_s:    time()-node_boot_time_seconds{instance="node-a.example:9100"}
+      net_down: sum(rate(node_network_receive_bytes_total{instance="node-a.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
+      net_up:   sum(rate(node_network_transmit_bytes_total{instance="node-a.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
+    derived:
+      ram_pct:      "100*(1-ram_a/ram_t)"
+      ram_used_g:   "(ram_t-ram_a)/1e9"
+      ram_total_g:  "ram_t/1e9"
+      disk_pct:     "100*(1-disk_a/disk_t)"
+      disk_used_g:  "(disk_t-disk_a)/1e9"
+      disk_total_g: "disk_t/1e9"
+      uptime:       "str(int(up_s//86400))+'d '+str(int(up_s%86400//3600))+'h'"
+      net_down_h:   "human_rate(net_down)"
+      net_up_h:     "human_rate(net_up)"
+    widgets:
+      - {type: bar,    x: 16,  y: 62,  w: 250, label: CPU,    pct: cpu_pct,  text: "{cpu_pct:.0f}%"}
+      - {type: bar,    x: 16,  y: 122, w: 250, label: RAM,    pct: ram_pct,  text: "{ram_used_g:.1f}/{ram_total_g:.0f}G"}
+      - {type: bar,    x: 16,  y: 182, w: 250, label: DISK /, pct: disk_pct, text: "{disk_used_g:.0f}/{disk_total_g:.0f}G"}
+      - {type: metric, x: 300, y: 58,  label: TEMP,   text: "{temp:.0f}°C", color: "auto:temp:75:90"}
+      - {type: metric, x: 300, y: 138, label: LOAD,   text: "{load1:.2f}"}
+      - {type: metric, x: 300, y: 218, label: UPTIME, text: "{uptime}"}
+      - {type: text,   x: 16,  y: 254, size: 13, anchor: lm, text: "DN {net_down_h}"}
+      - {type: text,   x: 16,  y: 274, size: 13, anchor: lm, text: "UP {net_up_h}"}
+
+  - title: NODE-B HOST
+    queries:
+      cpu_pct: 100-(avg(rate(node_cpu_seconds_total{instance="node-b.example:9100",mode="idle"}[2m]))*100)
+      ram_t:   node_memory_MemTotal_bytes{instance="node-b.example:9100"}
+      ram_a:   node_memory_MemAvailable_bytes{instance="node-b.example:9100"}
+      disk_t:  node_filesystem_size_bytes{instance="node-b.example:9100",mountpoint="/"}
+      disk_a:  node_filesystem_avail_bytes{instance="node-b.example:9100",mountpoint="/"}
+      temp:    max(node_hwmon_temp_celsius{instance="node-b.example:9100"})
+      load1:   node_load1{instance="node-b.example:9100"}
+      up_s:    time()-node_boot_time_seconds{instance="node-b.example:9100"}
+      net_down: sum(rate(node_network_receive_bytes_total{instance="node-b.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
+      net_up:   sum(rate(node_network_transmit_bytes_total{instance="node-b.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
+    derived:
+      ram_pct:      "100*(1-ram_a/ram_t)"
+      ram_used_g:   "(ram_t-ram_a)/1e9"
+      ram_total_g:  "ram_t/1e9"
+      disk_pct:     "100*(1-disk_a/disk_t)"
+      disk_used_g:  "(disk_t-disk_a)/1e9"
+      disk_total_g: "disk_t/1e9"
+      uptime:       "str(int(up_s//86400))+'d '+str(int(up_s%86400//3600))+'h'"
+      net_down_h:   "human_rate(net_down)"
+      net_up_h:     "human_rate(net_up)"
+    widgets:
+      - {type: bar,    x: 16,  y: 62,  w: 250, label: CPU,    pct: cpu_pct,  text: "{cpu_pct:.0f}%"}
+      - {type: bar,    x: 16,  y: 122, w: 250, label: RAM,    pct: ram_pct,  text: "{ram_used_g:.1f}/{ram_total_g:.0f}G"}
+      - {type: bar,    x: 16,  y: 182, w: 250, label: DISK /, pct: disk_pct, text: "{disk_used_g:.0f}/{disk_total_g:.0f}G"}
+      - {type: metric, x: 300, y: 58,  label: TEMP,   text: "{temp:.0f}°C", color: "auto:temp:75:90"}
+      - {type: metric, x: 300, y: 138, label: LOAD,   text: "{load1:.2f}"}
+      - {type: metric, x: 300, y: 218, label: UPTIME, text: "{uptime}"}
+      - {type: text,   x: 16,  y: 254, size: 13, anchor: lm, text: "DN {net_down_h}"}
+      - {type: text,   x: 16,  y: 274, size: 13, anchor: lm, text: "UP {net_up_h}"}
 
   # Live values over the stock Cyberdeck theme art: radials trace the ring art,
   # text widgets sit in its value boxes. GPU ring shows disk until the GPU lands.
+  # Parked from the rotation -- flip `disabled` to bring it back.
   - title: CYBERDECK
+    disabled: true
     background: res/themes/Cyberdeck/background.png
     header: false
     footer: false
