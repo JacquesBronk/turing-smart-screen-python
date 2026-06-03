@@ -8,6 +8,26 @@
 > * for Turing Smart Screen, use the official forum here: http://discuz.turzx.com/
 > * for other smart screens, contact your reseller
 
+> [!NOTE]
+> ## 🔀 About this fork: display platform (carousel / netmap / YAML pages)
+> This fork adds a **multi-page display platform** on top of the stock project — everything is
+> **purely additive** (no upstream files modified) and documented in **[DISPLAY.md](DISPLAY.md)**:
+> * 🎠 **Page carousel** — rotate YAML-defined stat pages (live-reloaded, per-page dwell/refresh)
+> * ⚡ **Diff-based partial rendering** — only changed bands cross the serial link; in-page value
+>   ticks are wipe-free and CPU/RAM stays tiny (~1% of one core, ~30 MB)
+> * 🗺️ **Animated network map** — hosts up/down as a star topology, packet dots on spokes with live traffic
+> * 📊 **Widgets**: `bar`, `metric`, `radial` (traces existing theme ring art — works great over the
+>   stock *Cyberdeck* background), `text`, `graph` (multi-series history), `cores` (per-core mini-bars)
+> * 🔌 **Pluggable data sources** — local psutil values plus named sources (Prometheus implemented),
+>   so pages can show Kubernetes, fleet, or any scraped metric next to host stats
+> * 🌙 Extras: backlight night/away schedule, serial auto-reconnect, net rates with auto units,
+>   RAPL CPU watts, systemd unit
+>
+> Quick start: `venv/bin/python display.py` with `display.yaml` (`mode: standard` runs the stock
+> engine untouched). Proposed upstream in
+> [mathoudebine/turing-smart-screen-python#1011](https://github.com/mathoudebine/turing-smart-screen-python/issues/1011).
+> Everything below this block is the original upstream README.
+
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black) ![Windows](https://img.shields.io/badge/Windows%2010%2F11-0078D6?style=for-the-badge&logoColor=white&logo=data:image/svg%2bxml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+V2luZG93czwvdGl0bGU+PHBhdGggZmlsbCA9ICIjRkZGRkZGIiBkPSJNMCwwSDExLjM3N1YxMS4zNzJIMFpNMTIuNjIzLDBIMjRWMTEuMzcySDEyLjYyM1pNMCwxMi42MjNIMTEuMzc3VjI0SDBabTEyLjYyMywwSDI0VjI0SDEyLjYyMyIvPjwvc3ZnPg==) [![macOS](https://img.shields.io/badge/mac%20os%20(⚠️major%20bug)-000000?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/mathoudebine/turing-smart-screen-python/issues/7) ![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-A22846?style=for-the-badge&logo=Raspberry%20Pi&logoColor=white) ![Python](https://img.shields.io/badge/Python-3.X-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) [![Licence](https://img.shields.io/github/license/mathoudebine/turing-smart-screen-python?style=for-the-badge)](./LICENSE)
   
 A Python system monitor program and an abstraction library for **small IPS USB-C displays.**    
