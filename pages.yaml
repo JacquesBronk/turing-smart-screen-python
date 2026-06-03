@@ -1,0 +1,80 @@
+# Carousel pages -- edit freely, the running carousel re-reads this file every
+# cycle (no restart needed). Screen orientation/brightness live in display.yaml.
+#
+# Timing:
+#   dwell:   seconds per page (full-frame redraw = visible wipe on transition)
+#   refresh: seconds between wipe-free in-page value updates
+#
+# Widget types:
+#   bar:    {type: bar, x, y, w, label, pct: <value-name>, text: "<format>"}
+#   metric: {type: metric, x, y, label, text: "<format>", color: <spec>, bw: <region width>}
+#
+# Page options:
+#   background: res/themes/<name>/background.png   draw widgets over theme art
+#   header: false / footer: false                  hide chrome (for art pages)
+#   queries:  name: <promql>                       value from the default `prom` source
+#             name: {source: <name>, query: ...}   value from a named source (display.yaml)
+#   derived:  name: <python expr over values>      computed values
+#
+# text format: python format string over the value namespace; unavailable -> "-".
+# Local values (always): cpu_pct ram_pct ram_used_g ram_total_g disk_pct
+#                        disk_used_g disk_total_g temp load1 uptime
+#
+# color spec:
+#   fg | dim | accent | ok | warn | bad      fixed color
+#   auto:<name>[:warn:bad]                   green/amber/red by thresholds (default 70:90)
+#   ok_if:<expr>[:<else-color>]              OK when expr true, else bad (or <else-color>)
+
+dwell: 8
+refresh: 2
+
+pages:
+  - title: HOST
+    widgets:
+      - {type: bar,    x: 16,  y: 62,  w: 250, label: CPU,    pct: cpu_pct,  text: "{cpu_pct:.0f}%"}
+      - {type: bar,    x: 16,  y: 122, w: 250, label: RAM,    pct: ram_pct,  text: "{ram_used_g:.1f}/{ram_total_g:.0f}G"}
+      - {type: bar,    x: 16,  y: 182, w: 250, label: DISK /, pct: disk_pct, text: "{disk_used_g:.0f}/{disk_total_g:.0f}G"}
+      - {type: metric, x: 300, y: 58,  label: TEMP,   text: "{temp:.0f}°C", color: "auto:temp:75:90"}
+      - {type: metric, x: 300, y: 138, label: LOAD,   text: "{load1:.2f}"}
+      - {type: metric, x: 300, y: 218, label: UPTIME, text: "{uptime}"}
+
+  - title: K3S CLUSTER
+    queries:
+      nodes_ready: sum(kube_node_status_condition{condition="Ready",status="true"})
+      nodes_total: count(kube_node_info)
+      pods_run:    sum(kube_pod_status_phase{phase="Running"})
+      pods_fail:   sum(kube_pod_status_phase{phase="Failed"}) or vector(0)
+      pods_pend:   sum(kube_pod_status_phase{phase="Pending"}) or vector(0)
+      namespaces:  count(count by (namespace)(kube_pod_info))
+      cpu:         100-(avg(rate(node_cpu_seconds_total{mode="idle"}[2m]))*100)
+      mem:         100*(1-sum(node_memory_MemAvailable_bytes)/sum(node_memory_MemTotal_bytes))
+    derived:
+      pods_bad: "(pods_fail or 0) + (pods_pend or 0)"
+    widgets:
+      - {type: metric, x: 16,  y: 60,  label: NODES READY, text: "{nodes_ready:.0f}/{nodes_total:.0f}", color: "ok_if:nodes_ready>=nodes_total"}
+      - {type: metric, x: 176, y: 60,  label: PODS RUN,    text: "{pods_run:.0f}"}
+      - {type: metric, x: 336, y: 60,  label: PODS BAD,    text: "{pods_bad:.0f}", color: "ok_if:pods_bad==0:warn"}
+      - {type: metric, x: 16,  y: 170, label: NAMESPACES,  text: "{namespaces:.0f}"}
+      - {type: metric, x: 176, y: 170, label: CPU,         text: "{cpu:.0f}%", color: "auto:cpu"}
+      - {type: metric, x: 336, y: 170, label: MEM,         text: "{mem:.0f}%", color: "auto:mem"}
+
+  - title: FLEET
+    queries:
+      hosts_up:    sum(up{job=~".*node.*"})
+      hosts_total: count(node_uname_info)
+      alerts:      count(ALERTS{alertstate="firing"}) or vector(0)
+      cpu:         100-(avg(rate(node_cpu_seconds_total{mode="idle"}[2m]))*100)
+      mem:         100*(1-sum(node_memory_MemAvailable_bytes)/sum(node_memory_MemTotal_bytes))
+    widgets:
+      - {type: metric, x: 16,  y: 60,  label: HOSTS UP, text: "{hosts_up:.0f}/{hosts_total:.0f}", color: "ok_if:hosts_up>=hosts_total"}
+      - {type: metric, x: 176, y: 60,  label: ALERTS,   text: "{alerts:.0f}", color: "ok_if:alerts==0"}
+      - {type: metric, x: 16,  y: 170, label: CPU,      text: "{cpu:.0f}%", color: "auto:cpu"}
+      - {type: metric, x: 176, y: 170, label: MEM,      text: "{mem:.0f}%", color: "auto:mem"}
+
+  # Example: widgets over existing theme art (try it, then tune positions):
+  # - title: CYBERDECK
+  #   background: res/themes/Cyberdeck/background.png
+  #   header: false
+  #   footer: false
+  #   widgets:
+  #     - {type: metric, x: 40, y: 80, label: CPU, text: "{cpu_pct:.0f}%", color: accent}

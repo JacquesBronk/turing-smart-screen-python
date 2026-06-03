@@ -1,0 +1,21 @@
+# Display platform config -- which app drives the screen, and shared resources.
+# Mode changes apply on service restart: sudo systemctl restart turing-display.service
+
+mode: carousel        # standard | carousel | netmap
+
+screen:
+  orientation: landscape       # landscape | reverse_landscape
+  brightness: 20
+
+# Named data sources. Apps reference these by name; `prom` is the default.
+# Add more prometheus endpoints (or future source types) here.
+sources:
+  prom:
+    type: prometheus
+    url: http://prometheus.example/api/v1/query
+
+netmap:
+  source: prom
+  refresh: 30                  # seconds between full redraws
+  center_label: LAN
+  up_query: up{job=~".*node.*"}
