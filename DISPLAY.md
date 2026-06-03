@@ -59,9 +59,10 @@ ONCE=1 DISPLAY_MODE=netmap ./venv/bin/python display.py  # netmap -> /tmp/netmap
   `ScreenOff`). Any replacement must call `ScreenOn()` or you'll push pixels
   to a dark panel.
 - **Full-frame pushes take ~1–2 s** over the CDC-ACM serial link (visible
-  top-down wipe). The carousel therefore refreshes in-page values by pushing
-  only each widget's region; the wipe remains only as the page-transition
-  effect.
+  top-down wipe). All apps therefore diff each new frame against the previous
+  one (`common.push_frame`) and push only changed bands — value ticks repaint
+  tiny rectangles, page transitions skip unchanged chrome/blank space, and a
+  full wipe happens only on the very first frame after start.
 - `RESET_ON_STARTUP: true` makes the device re-enumerate (port vanishes
   mid-start). Keep it false / don't call `Reset()`.
 - Only one process may own the serial port: disable `turing-screen.service`

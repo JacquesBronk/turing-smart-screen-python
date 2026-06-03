@@ -1,9 +1,10 @@
 """Carousel app: rotate YAML-defined stat pages with wipe-free in-page refresh.
 
 Pages live in pages.yaml (see DISPLAY.md for the schema) and are re-read every
-cycle, so edits apply live. A full-frame push (visible top-down wipe, ~1-2s of
-serial bandwidth) happens only on page transitions; between them, each widget
-region is refreshed individually so values tick in place.
+cycle, so edits apply live. Every push is a diff against the previous frame
+(common.push_frame), so value ticks repaint a few small rectangles and page
+transitions repaint only the regions that actually differ -- never a full
+top-down wipe after the first frame.
 """
 import os
 import sys
@@ -66,13 +67,6 @@ def render_page(page, idx, npages, sources):
     return img
 
 
-def page_boxes(page):
-    boxes = [c.widget_bbox(w) for w in page.get("widgets") or []]
-    if page.get("footer", True):
-        boxes.append(c.FOOTER_CLOCK_BOX)
-    return boxes
-
-
 def run(lcd, display_cfg):
     pages_file = os.path.join(
         c.BASE, (display_cfg.get("carousel") or {}).get("pages_file", "pages.yaml"))
@@ -93,6 +87,7 @@ def run(lcd, display_cfg):
     psutil.cpu_percent()  # prime the first reading
 
     idx = 0
+    prev = None  # last frame on the panel; every push is a diff against it
     while True:
         try:
             cfg = load_pages_cfg(pages_file)  # live reload; keep last good on error
@@ -107,7 +102,9 @@ def run(lcd, display_cfg):
         dwell = float(cfg.get("dwell", 8))
         refresh = float(cfg.get("refresh", 2))
 
-        lcd.DisplayPILImage(render_page(page, idx, len(pages), sources), 0, 0)
+        frame = render_page(page, idx, len(pages), sources)
+        c.push_frame(lcd, frame, prev)
+        prev = frame
         t0 = time.monotonic()
         while True:
             remaining = dwell - (time.monotonic() - t0)
@@ -116,8 +113,7 @@ def run(lcd, display_cfg):
             time.sleep(min(refresh, remaining))
             if dwell - (time.monotonic() - t0) <= 0.05:
                 break
-            # wipe-free refresh: redraw in memory, push only widget regions
             frame = render_page(page, idx, len(pages), sources)
-            for box in page_boxes(page):
-                lcd.DisplayPILImage(frame.crop(box), box[0], box[1])
+            c.push_frame(lcd, frame, prev)
+            prev = frame
         idx += 1

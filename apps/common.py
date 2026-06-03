@@ -11,7 +11,7 @@ import urllib.parse
 import urllib.request
 
 import psutil
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 W, H = 480, 320
@@ -175,9 +175,6 @@ def header(d, title, idx=None, npages=None):
             cx -= 18
 
 
-FOOTER_CLOCK_BOX = (W - 110, 301, W, 320)
-
-
 def footer(d):
     d.line([0, 300, W, 300], fill=TRACK)
     d.text((16, 311), socket.gethostname(), font=font(13), fill=COLORS["dim"], anchor="lm")
@@ -209,12 +206,24 @@ def draw_metric(d, w, vals):
 WIDGETS = {"bar": draw_bar, "metric": draw_metric}
 
 
-def widget_bbox(w):
-    """Screen region a widget occupies -- used for partial (wipe-free) updates."""
-    x, y = w["x"], w["y"]
-    if w.get("type") == "bar":
-        return (x, y, min(W, x + w.get("w", 250) + 2), min(H, y + 42))
-    return (x, y, min(W, x + w.get("bw", 160)), min(H, y + 68))
+def push_frame(lcd, new, old=None, band=20):
+    """Push only the horizontal bands of `new` that differ from `old`.
+
+    This is what keeps the screen wipe-free: value ticks push a few tiny
+    rectangles, and even page transitions skip unchanged chrome and blank
+    space. With old=None the full frame is pushed (first frame only).
+    """
+    if old is None:
+        lcd.DisplayPILImage(new, 0, 0)
+        return
+    diff = ImageChops.difference(old, new)
+    if not diff.getbbox():
+        return
+    for y0 in range(0, H, band):
+        b = diff.crop((0, y0, W, min(H, y0 + band))).getbbox()
+        if b:
+            x0, by0, x1, by1 = b
+            lcd.DisplayPILImage(new.crop((x0, y0 + by0, x1, y0 + by1)), x0, y0 + by0)
 
 
 # ---------- lcd ----------

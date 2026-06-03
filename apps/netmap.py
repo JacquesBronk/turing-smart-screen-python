@@ -79,6 +79,9 @@ def run(lcd, display_cfg):
 
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
+    prev = None
     while True:
-        lcd.DisplayPILImage(render(gather_hosts(src, nm_cfg), nm_cfg), 0, 0)
+        frame = render(gather_hosts(src, nm_cfg), nm_cfg)
+        c.push_frame(lcd, frame, prev)
+        prev = frame
         time.sleep(float(nm_cfg.get("refresh", 30)))
