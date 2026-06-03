@@ -39,10 +39,12 @@ Home Assistant, kubectl, etc. is one small class in `apps/common.py`
 
 ## Page schema
 
-See the comment block at the top of `pages.yaml` — widgets (`bar`, `metric`),
-format strings over a value namespace (local psutil values + per-page query
-results + derived expressions), threshold/conditional color specs, optional
-`background:` art from any stock theme.
+See the comment block at the top of `pages.yaml` — widgets (`bar`, `metric`,
+`radial`, `text`), format strings over a value namespace (local psutil values
++ per-page query results + derived expressions), threshold/conditional color
+specs, optional `background:` art from any stock theme (the shipped CYBERDECK
+page traces live radial gauges over the stock Cyberdeck theme art), and
+`type: netmap` pages that embed the netmap app in the rotation.
 
 ## Preview without a screen
 

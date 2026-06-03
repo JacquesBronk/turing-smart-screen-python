@@ -7,7 +7,15 @@
 #
 # Widget types:
 #   bar:    {type: bar, x, y, w, label, pct: <value-name>, text: "<format>"}
-#   metric: {type: metric, x, y, label, text: "<format>", color: <spec>, bw: <region width>}
+#   metric: {type: metric, x, y, label, text: "<format>", color: <spec>}
+#   radial: {type: radial, x, y, r, width, pct: <value-name>, text, size, label, track: true}
+#           arc gauge from 12 o'clock; omit `track` to trace background ring art
+#   text:   {type: text, x, y, size, weight, family, anchor, text: "<format>", color: <spec>}
+#
+# Page types:
+#   (default)       widget page as below
+#   type: netmap    embeds the netmap app as a page; keys here override
+#                   display.yaml's `netmap:` section (title, up_query, ...)
 #
 # Page options:
 #   background: res/themes/<name>/background.png   draw widgets over theme art
@@ -71,10 +79,30 @@ pages:
       - {type: metric, x: 16,  y: 170, label: CPU,      text: "{cpu:.0f}%", color: "auto:cpu"}
       - {type: metric, x: 176, y: 170, label: MEM,      text: "{mem:.0f}%", color: "auto:mem"}
 
-  # Example: widgets over existing theme art (try it, then tune positions):
-  # - title: CYBERDECK
-  #   background: res/themes/Cyberdeck/background.png
-  #   header: false
-  #   footer: false
-  #   widgets:
-  #     - {type: metric, x: 40, y: 80, label: CPU, text: "{cpu_pct:.0f}%", color: accent}
+  # The netmap app embedded as a page (settings inherit from display.yaml `netmap:`)
+  - type: netmap
+
+  # Live values over the stock Cyberdeck theme art: radials trace the ring art,
+  # text widgets sit in its value boxes. GPU ring shows disk until the GPU lands.
+  - title: CYBERDECK
+    background: res/themes/Cyberdeck/background.png
+    header: false
+    footer: false
+    queries:
+      hosts_up:    sum(up{job=~".*node.*"})
+      hosts_total: count(node_uname_info)
+      pods_run:    sum(kube_pod_status_phase{phase="Running"})
+    derived:
+      temp_pct: "(temp or 0)/90*100"
+      load_pct: "(load1 or 0)/8*100"
+    widgets:
+      - {type: radial, x: 96,  y: 79,  r: 37, width: 9,  pct: cpu_pct,  text: "{cpu_pct:.0f}%"}
+      - {type: radial, x: 107, y: 206, r: 35, width: 9,  pct: ram_pct,  text: "{ram_pct:.0f}%"}
+      - {type: radial, x: 164, y: 136, r: 27, width: 7,  pct: temp_pct, text: "{temp:.0f}°", size: 16}
+      - {type: radial, x: 232, y: 69,  r: 31, width: 8,  pct: load_pct, text: "{load1:.1f}", size: 16}
+      - {type: radial, x: 388, y: 165, r: 50, width: 10, pct: disk_pct, text: "{disk_pct:.0f}%"}
+      - {type: text,   x: 375, y: 47,  size: 12, text: "{ram_used_g:.1f} / {ram_total_g:.0f} G"}
+      - {type: text,   x: 72,  y: 137, size: 14, text: "{uptime}"}
+      - {type: text,   x: 266, y: 160, size: 14, text: "{time_hm}"}
+      - {type: text,   x: 252, y: 250, size: 22, weight: Bold, text: "{pods_run:.0f} pods"}
+      - {type: text,   x: 398, y: 292, size: 12, text: "{hosts_up:.0f}/{hosts_total:.0f} up", color: "ok_if:hosts_up>=hosts_total"}

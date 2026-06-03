@@ -39,7 +39,13 @@ def page_values(page, sources):
     return vals
 
 
-def render_page(page, idx, npages, sources):
+def render_page(page, idx, npages, sources, display_cfg=None):
+    if page.get("type") == "netmap":  # embed the netmap app as a page
+        from apps import netmap
+        nm = dict((display_cfg or {}).get("netmap") or {})
+        nm.update({k: v for k, v in page.items() if k != "type"})
+        src = sources.get(nm.get("source", "prom"))
+        return netmap.render(netmap.gather_hosts(src, nm), nm, idx, npages)
     img = Image.new("RGB", (c.W, c.H), c.BG)
     bg = page.get("background")
     if bg:
@@ -77,7 +83,7 @@ def run(lcd, display_cfg):
         pages = cfg.get("pages") or []
         for k, page in enumerate(pages):
             p = f"/tmp/carousel_{k}.png"
-            render_page(page, k, len(pages), sources).save(p)
+            render_page(page, k, len(pages), sources, display_cfg).save(p)
             print("wrote", p)
         return
 
@@ -102,7 +108,7 @@ def run(lcd, display_cfg):
         dwell = float(cfg.get("dwell", 8))
         refresh = float(cfg.get("refresh", 2))
 
-        frame = render_page(page, idx, len(pages), sources)
+        frame = render_page(page, idx, len(pages), sources, display_cfg)
         c.push_frame(lcd, frame, prev)
         prev = frame
         t0 = time.monotonic()
@@ -113,7 +119,7 @@ def run(lcd, display_cfg):
             time.sleep(min(refresh, remaining))
             if dwell - (time.monotonic() - t0) <= 0.05:
                 break
-            frame = render_page(page, idx, len(pages), sources)
+            frame = render_page(page, idx, len(pages), sources, display_cfg)
             c.push_frame(lcd, frame, prev)
             prev = frame
         idx += 1

@@ -31,12 +31,13 @@ def gather_hosts(src, nm_cfg):
     return sorted(hosts.items())
 
 
-def render(hosts, nm_cfg):
+def render(hosts, nm_cfg, idx=None, npages=None):
     img = Image.new("RGB", (c.W, c.H), c.BG)
     d = ImageDraw.Draw(img)
     n_up = sum(1 for _, v in hosts if v >= 1)
-    c.header(d, "NETWORK MAP")
-    d.text((c.W - 16, 22), f"{n_up}/{len(hosts)} up",
+    c.header(d, nm_cfg.get("title", "NETWORK MAP"), idx, npages)
+    count_x = c.W - 16 - (18 * npages + 16 if npages else 0)  # clear the page dots
+    d.text((count_x, 22), f"{n_up}/{len(hosts)} up",
            font=c.font(16, "B", "mono"),
            fill=c.COLORS["ok"] if n_up == len(hosts) else c.COLORS["bad"], anchor="rm")
 

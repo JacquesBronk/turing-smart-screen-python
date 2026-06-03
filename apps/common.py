@@ -126,6 +126,7 @@ def local_values():
         "temp": host_temp(),
         "load1": os.getloadavg()[0],
         "uptime": fmt_uptime(),
+        "time_hm": time.strftime("%H:%M"),
     }
 
 
@@ -203,7 +204,35 @@ def draw_metric(d, w, vals):
            fill=resolve_color(w.get("color"), vals), anchor="la")
 
 
-WIDGETS = {"bar": draw_bar, "metric": draw_metric}
+def draw_radial(d, w, vals):
+    """Arc gauge: fills clockwise from 12 o'clock. With `track: true` draws its
+    own ring; without, it traces ring art from a background image."""
+    x, y, r = w["x"], w["y"], w.get("r", 40)
+    pct = vals.get(w.get("pct")) or 0
+    width = w.get("width", 8)
+    color = resolve_color(w["color"], vals) if w.get("color") else threshold_color(pct)
+    if w.get("track"):
+        d.arc([x - r, y - r, x + r, y + r], 0, 360, fill=TRACK, width=width)
+    if pct > 0:
+        d.arc([x - r, y - r, x + r, y + r], -90, -90 + min(pct, 100) * 3.6,
+              fill=color, width=width)
+    if w.get("text"):
+        d.text((x, y), fmt(w["text"], vals), font=font(w.get("size", 20), "Bold"),
+               fill=COLORS["fg"], anchor="mm")
+    if w.get("label"):
+        d.text((x, y + r + 4), str(w["label"]), font=font(12, "Medium"),
+               fill=COLORS["dim"], anchor="ma")
+
+
+def draw_text(d, w, vals):
+    """Free-form text at (x, y) -- for value boxes on background art pages."""
+    d.text((w["x"], w["y"]), fmt(w.get("text", ""), vals),
+           font=font(w.get("size", 16), w.get("weight", "Medium"),
+                     w.get("family", "roboto")),
+           fill=resolve_color(w.get("color"), vals), anchor=w.get("anchor", "mm"))
+
+
+WIDGETS = {"bar": draw_bar, "metric": draw_metric, "radial": draw_radial, "text": draw_text}
 
 
 def push_frame(lcd, new, old=None, band=20):
