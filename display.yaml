@@ -24,3 +24,13 @@ netmap:
   refresh: 30                  # seconds between full redraws
   center_label: LAN
   up_query: up{job=~".*node.*"}
+  # Clients badge (footer center): "+N clients", amber NEW flag while a
+  # first-seen MAC is younger than new_window hours. Read PASSIVELY from the
+  # kernel neighbour table (`ip neigh`) -- sends zero packets, only reports
+  # devices the host already learned from normal traffic (so the count is a
+  # subset of the LAN, not a full scan). Monitored hosts are excluded by
+  # resolving their prom instance names; list any that don't resolve here.
+  infra_ips: [10.0.0.30, 10.0.0.31]   # monitored hosts (bare prom instances)
+  # new_window: 24             # hours a newcomer MAC stays flagged NEW
+  # state_file: ~/.local/state/turing-display/seen-macs.json
+  # neigh_cmd: [ip, -4, neigh, show]   # override the neighbour-table command
