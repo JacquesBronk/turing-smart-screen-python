@@ -1,4 +1,7 @@
 # Display platform config -- which app drives the screen, and shared resources.
+# Copy this to display.yaml and edit for your host (display.yaml is gitignored
+# so your site-specific endpoints/IPs stay local). If display.yaml is absent the
+# app falls back to this example.
 # Mode changes apply on service restart: sudo systemctl restart turing-display.service
 
 mode: carousel        # standard | carousel | netmap
@@ -17,7 +20,7 @@ screen:
 sources:
   prom:
     type: prometheus
-    url: http://prometheus.example/api/v1/query
+    url: http://localhost:9090/api/v1/query   # your Prometheus HTTP API
 
 netmap:
   source: prom
@@ -30,7 +33,8 @@ netmap:
   # devices the host already learned from normal traffic (so the count is a
   # subset of the LAN, not a full scan). Monitored hosts are excluded by
   # resolving their prom instance names; list any that don't resolve here.
-  infra_ips: [10.0.0.30, 10.0.0.31]   # monitored hosts (bare prom instances)
+  # infra_ips: [10.0.0.30, 10.0.0.31]   # IPs of monitored hosts whose prom
+  #                                       # instance name doesn't resolve via DNS
   # new_window: 24             # hours a newcomer MAC stays flagged NEW
   # state_file: ~/.local/state/turing-display/seen-macs.json
   # neigh_cmd: [ip, -4, neigh, show]   # override the neighbour-table command

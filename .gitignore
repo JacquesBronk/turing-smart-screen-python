@@ -142,3 +142,7 @@ tmp
 
 version.txt
 external/LibreHardwareMonitor/LibreHardwareMonitorLib.sys
+
+# Site-specific config (copy from *.example.yaml). Keep local endpoints/IPs out of git.
+display.yaml
+pages.yaml

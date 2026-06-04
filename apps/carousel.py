@@ -79,6 +79,8 @@ def render_page(page, idx, npages, sources, display_cfg=None):
 def run(lcd, display_cfg):
     pages_file = os.path.join(
         c.BASE, (display_cfg.get("carousel") or {}).get("pages_file", "pages.yaml"))
+    if not os.path.exists(pages_file):
+        pages_file = os.path.join(c.BASE, "pages.example.yaml")  # generic fallback
     sources = c.build_sources(display_cfg)
     cfg = load_pages_cfg(pages_file)
 

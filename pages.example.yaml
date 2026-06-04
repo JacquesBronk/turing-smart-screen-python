@@ -1,6 +1,10 @@
 # Carousel pages -- edit freely, the running carousel re-reads this file every
 # cycle (no restart needed). Screen orientation/brightness live in display.yaml.
 #
+# Copy this to pages.yaml and edit for your hosts (pages.yaml is gitignored so
+# your site-specific PromQL/instances stay local). If pages.yaml is absent the
+# carousel falls back to this example.
+#
 # Timing:
 #   dwell:   seconds per page (full-frame redraw = visible wipe on transition)
 #   refresh: seconds between wipe-free in-page value updates
@@ -47,6 +51,7 @@ dwell: 60
 refresh: 2
 
 pages:
+  # Local host (psutil) -- no Prometheus needed.
   - title: HOST
     widgets:
       - {type: bar,    x: 16,  y: 62,  w: 250, label: CPU,    pct: cpu_pct,  text: "{cpu_pct:.0f}%"}
@@ -70,6 +75,7 @@ pages:
       - {type: graph, x: 250, y: 205, w: 215, h: 80, value: net_up,
          samples: 90, label: NET UP, text: "{net_up_h}"}
 
+  # Example Prometheus page -- generic kube-state-metrics, no host names.
   - title: K3S CLUSTER
     queries:
       nodes_ready: sum(kube_node_status_condition{condition="Ready",status="true"})
@@ -109,7 +115,10 @@ pages:
   - type: netmap
     refresh: 0.5
 
-  - title: NODE-A HOST
+  # Remote host page -- queries another node-exporter by instance, then reuses
+  # the local HOST widget layout by overriding the same value names. Duplicate
+  # this block per host; change the instance and title.
+  - title: REMOTE HOST
     queries:
       cpu_pct: 100-(avg(rate(node_cpu_seconds_total{instance="node-a.example:9100",mode="idle"}[2m]))*100)
       ram_t:   node_memory_MemTotal_bytes{instance="node-a.example:9100"}
@@ -121,38 +130,6 @@ pages:
       up_s:    time()-node_boot_time_seconds{instance="node-a.example:9100"}
       net_down: sum(rate(node_network_receive_bytes_total{instance="node-a.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
       net_up:   sum(rate(node_network_transmit_bytes_total{instance="node-a.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
-    derived:
-      ram_pct:      "100*(1-ram_a/ram_t)"
-      ram_used_g:   "(ram_t-ram_a)/2**30"
-      ram_total_g:  "ram_t/2**30"
-      disk_pct:     "100*(1-disk_a/disk_t)"
-      disk_used_g:  "(disk_t-disk_a)/2**30"
-      disk_total_g: "disk_t/2**30"
-      uptime:       "str(int(up_s//86400))+'d '+str(int(up_s%86400//3600))+'h'"
-      net_down_h:   "human_rate(net_down)"
-      net_up_h:     "human_rate(net_up)"
-    widgets:
-      - {type: bar,    x: 16,  y: 62,  w: 250, label: CPU,    pct: cpu_pct,  text: "{cpu_pct:.0f}%"}
-      - {type: bar,    x: 16,  y: 122, w: 250, label: RAM,    pct: ram_pct,  text: "{ram_used_g:.1f}/{ram_total_g:.0f}G"}
-      - {type: bar,    x: 16,  y: 182, w: 250, label: DISK /, pct: disk_pct, text: "{disk_used_g:.0f}/{disk_total_g:.0f}G"}
-      - {type: metric, x: 300, y: 58,  label: TEMP,   text: "{temp:.0f}°C", color: "auto:temp:75:90"}
-      - {type: metric, x: 300, y: 138, label: LOAD,   text: "{load1:.2f}"}
-      - {type: metric, x: 300, y: 218, label: UPTIME, text: "{uptime}"}
-      - {type: text,   x: 16,  y: 254, size: 13, anchor: lm, text: "DN {net_down_h}"}
-      - {type: text,   x: 16,  y: 274, size: 13, anchor: lm, text: "UP {net_up_h}"}
-
-  - title: NODE-B HOST
-    queries:
-      cpu_pct: 100-(avg(rate(node_cpu_seconds_total{instance="node-b.example:9100",mode="idle"}[2m]))*100)
-      ram_t:   node_memory_MemTotal_bytes{instance="node-b.example:9100"}
-      ram_a:   node_memory_MemAvailable_bytes{instance="node-b.example:9100"}
-      disk_t:  node_filesystem_size_bytes{instance="node-b.example:9100",mountpoint="/"}
-      disk_a:  node_filesystem_avail_bytes{instance="node-b.example:9100",mountpoint="/"}
-      temp:    max(node_hwmon_temp_celsius{instance="node-b.example:9100"})
-      load1:   node_load1{instance="node-b.example:9100"}
-      up_s:    time()-node_boot_time_seconds{instance="node-b.example:9100"}
-      net_down: sum(rate(node_network_receive_bytes_total{instance="node-b.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
-      net_up:   sum(rate(node_network_transmit_bytes_total{instance="node-b.example:9100",device=~"en.*|eth.*|nic.*"}[2m]))
     derived:
       ram_pct:      "100*(1-ram_a/ram_t)"
       ram_used_g:   "(ram_t-ram_a)/2**30"

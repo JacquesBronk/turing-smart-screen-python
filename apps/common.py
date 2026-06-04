@@ -91,7 +91,7 @@ def build_sources(display_cfg):
             out[name] = factory(spec)
     if "prom" not in out:
         out["prom"] = PrometheusSource(
-            os.environ.get("PROM", "http://prometheus.example/api/v1/query"))
+            os.environ.get("PROM", "http://localhost:9090/api/v1/query"))
     return out
 
 

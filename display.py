@@ -24,7 +24,10 @@ import yaml
 
 
 def main():
-    with open(os.path.join(BASE, "display.yaml")) as f:
+    cfg_path = os.path.join(BASE, "display.yaml")
+    if not os.path.exists(cfg_path):
+        cfg_path = os.path.join(BASE, "display.example.yaml")  # generic fallback
+    with open(cfg_path) as f:
         cfg = yaml.safe_load(f) or {}
     mode = os.environ.get("DISPLAY_MODE") or cfg.get("mode", "carousel")
 
